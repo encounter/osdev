@@ -1,13 +1,9 @@
+#include "console.h"
+
 #include <stdint.h>
+#include <stdnoreturn.h>
 
-#define VIDEO_MEM ((volatile uint16_t *) 0xb8000)
-#define write_char(pos, c) (VIDEO_MEM[pos] = (0x0F << 8) | c)
-
-__attribute__((noreturn)) void _start() {
-    write_char(0, 'H');
-    write_char(1, 'e');
-    write_char(2, 'l');
-    write_char(3, 'l');
-    write_char(4, 'o');
+_Noreturn void _start() {
+    print_str_const("Hello, world!");
     while(1) {}
 }

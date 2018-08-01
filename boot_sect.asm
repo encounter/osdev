@@ -1,34 +1,22 @@
 [bits 16]
 [org 0x7C00]
+STACK_BASE equ 0x9000
+KERNEL_OFFSET equ 0x1000
+
 start:
-  mov bp, 0x8000 ; put our stack at 0x8000
+  mov bp, STACK_BASE ; position our stack pointer
   mov sp, bp
 
   mov ax, 0x0003 ; "Set Video Mode" (mode 03h)
   int 10h
 
-  ; mov [BOOT_DRIVE], dl ; store our boot drive for later
-
   mov bx, STARTING_UP
   call print_str
 
-  mov bx, 0x9000
-  mov dh, 2
+  mov bx, KERNEL_OFFSET
+  mov dh, 5
   ; mov dl, [BOOT_DRIVE]
   call disk_load
-
-  mov bx, DONE
-  call print_str
-
-  mov bx, [es:0x9000]
-  call print_hex
-  mov bx, ENDL
-  call print_str
-
-  mov bx, [es:0x9000 + 512]
-  call print_hex
-  mov bx, ENDL
-  call print_str
 
   mov ax, 0x0003 ; "Set Video Mode" (mode 03h)
   int 10h
@@ -91,20 +79,13 @@ print_hex_char:
 %include "boot_print.asm"
 
 begin_pm:
-  ; mov ebx, PROT_MODE
-  ; call print_string_pm ; Note that this will be written at the top left corner
-
-  call 0x9000
+  call KERNEL_OFFSET
   jmp $          ; spin forever
 
 ; datas
 ENDL: db 0Dh, 0Ah, 0
 STARTING_UP: db 'Reading boot sector...', 0Dh, 0Ah, 0
-DONE: db 'Done!', 0Dh, 0Ah, 0
 PROT_MODE db "Loaded 32-bit protected mode", 0
-
-; globals
-BOOT_DRIVE: db 0
 
 ; Fill rest of the bin with nops
 times 510-($-$$) nop
@@ -114,3 +95,4 @@ dw 0xAA55
 
 ; my awesome kernel
 incbin "main.bin"
+incbin "zero.bin" ; some padding
