@@ -14,7 +14,7 @@ start:
   call print_str
 
   mov bx, KERNEL_OFFSET
-  mov dh, 5
+  mov dh, 15
   ; mov dl, [BOOT_DRIVE]
   call disk_load
 
@@ -73,10 +73,10 @@ print_hex_char:
   int 10h
   ret
 
-%include "boot_disk.asm"
-%include "boot_pm.asm" ; start of 32-bit PM code
-%include "boot_gdt.asm"
-%include "boot_print.asm"
+%include "disk.asm"
+%include "pm.asm" ; start of 32-bit PM code
+%include "gdt.asm"
+%include "print.asm"
 
 begin_pm:
   call KERNEL_OFFSET
@@ -94,5 +94,5 @@ times 510-($-$$) nop
 dw 0xAA55
 
 ; my awesome kernel
-incbin "main.bin"
-incbin "zero.bin" ; some padding
+; incbin "kernel/main.bin"
+; incbin "boot/zero.bin" ; some padding
