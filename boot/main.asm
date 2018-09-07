@@ -14,7 +14,7 @@ start:
   call print_str
 
   mov bx, KERNEL_OFFSET
-  mov dh, 15
+  mov dh, 33
   ; mov dl, [BOOT_DRIVE]
   call disk_load
 

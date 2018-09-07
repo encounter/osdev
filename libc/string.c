@@ -1,6 +1,6 @@
 #include <string.h>
 
-// One measley byte at a time...
+// One measly byte at a time...
 void *memcpy(void *destination, const void *source, size_t num) {
   for (int i = 0; i < num; i++)
     ((uint8_t *) destination)[i] = ((uint8_t *) source)[i];

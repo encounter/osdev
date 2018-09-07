@@ -4,8 +4,11 @@
 #include <string.h>
 
 int handle_scrolling(int cursor_offset);
+
 int get_cursor_offset();
+
 void set_cursor_offset(int offset);
+
 int print_char(char c, int col, int row, char attr);
 
 static inline int get_offset(int col, int row) {
@@ -29,21 +32,16 @@ static inline int get_offset_col(int offset) {
  * If col, row, are negative, we will use the current offset
  */
 void kprint_at(char *message, int col, int row) {
-    /* Set cursor if col/row are negative */
     int offset;
-    if (col >= 0 && row >= 0)
-        offset = get_offset(col, row);
-    else {
+    if (col < 0 || row < 0) {
         offset = get_cursor_offset();
         row = get_offset_row(offset);
         col = get_offset_col(offset);
     }
 
-    /* Loop through message and print it */
     int i = 0;
     while (message[i] != 0) {
         offset = print_char(message[i++], col, row, WHITE_ON_BLACK);
-        /* Compute row/col for next iteration */
         row = get_offset_row(offset);
         col = get_offset_col(offset);
     }
@@ -53,11 +51,32 @@ void kprint(char *message) {
     kprint_at(message, -1, -1);
 }
 
+void kprint_char(char c) {
+    int offset = get_cursor_offset();
+    print_char(c, get_offset_col(offset), get_offset_row(offset), WHITE_ON_BLACK);
+}
+
+// FIXME this kinda sucks
+#define to_hex(c) ((char) ((c) > 9 ? (c) + 0x37 : (c) + 0x30))
+char hextemp[8];
+
+void kprint_uint32(uint32_t val) {
+    kprint("0x");
+    hextemp[0] = to_hex(val >> 28 & 0xF);
+    hextemp[1] = to_hex(val >> 24 & 0xF);
+    hextemp[2] = to_hex(val >> 20 & 0xF);
+    hextemp[3] = to_hex(val >> 16 & 0xF);
+    hextemp[4] = to_hex(val >> 12 & 0xF);
+    hextemp[5] = to_hex(val >> 8 & 0xF);
+    hextemp[6] = to_hex(val >> 4 & 0xF);
+    hextemp[7] = to_hex(val & 0xF);
+    kprint(hextemp);
+}
+
 
 /**********************************************************
  * Private kernel functions                               *
  **********************************************************/
-
 
 /**
  * Innermost print function for our kernel, directly accesses the video memory 
@@ -72,7 +91,7 @@ int print_char(char c, int col, int row, char attr) {
 
     /* Error control: print a red 'E' if the coords aren't right */
     if (col >= MAX_COLS || row >= MAX_ROWS) {
-        VIDEO_ADDRESS[MAX_COLS*MAX_ROWS-1] = (RED_ON_WHITE << 8) | 'E';
+        VIDEO_ADDRESS[MAX_COLS * MAX_ROWS - 1] = (RED_ON_WHITE << 8) | 'E';
         return get_offset(col, row);
     }
 
@@ -82,16 +101,17 @@ int print_char(char c, int col, int row, char attr) {
 
     if (c == '\n') {
         row = get_offset_row(offset);
-        offset = get_offset(0, row+1);
+        offset = get_offset(0, row + 1);
     } else {
-        VIDEO_ADDRESS[offset++] = (attr << 8) | c;
+        VIDEO_ADDRESS[offset++] = (uint16_t) (attr << 8 | c);
     }
     set_cursor_offset(offset);
     return offset;
 }
 
 int get_cursor_offset() {
-    /* Use the VGA ports to get the current cursor position
+    /*
+     * Use the VGA ports to get the current cursor position
      * 1. Ask for high byte of the cursor offset (data 14)
      * 2. Ask for low byte (data 15)
      */
@@ -115,7 +135,7 @@ void clear_screen() {
     set_cursor_offset(get_offset(0, 0));
 }
 
-/* Advance the text cursor, scrolling the video buffer if necessary. */ 
+/* Advance the text cursor, scrolling the video buffer if necessary. */
 int handle_scrolling(int cursor_offset) {
     // If the cursor is within the screen, return it unmodified. 
     if (cursor_offset < MAX_ROWS * MAX_COLS)
@@ -123,18 +143,18 @@ int handle_scrolling(int cursor_offset) {
 
     /* Shuffle the rows back one. */
     for (int i = 1; i < MAX_ROWS; i++) {
-        memcpy((void *) (VIDEO_ADDRESS + get_offset(0, i - 1)), 
+        memcpy((void *) (VIDEO_ADDRESS + get_offset(0, i - 1)),
                (void *) (VIDEO_ADDRESS + get_offset(0, i)),
-               MAX_COLS * sizeof(*VIDEO_ADDRESS)); 
+               MAX_COLS * sizeof(*VIDEO_ADDRESS));
     }
 
     /* Blank the last line by setting all bytes to 0 */
-    memset((void *) (VIDEO_ADDRESS + get_offset(0, MAX_ROWS - 1)), 
+    memset((void *) (VIDEO_ADDRESS + get_offset(0, MAX_ROWS - 1)),
            0, MAX_COLS * sizeof(*VIDEO_ADDRESS));
 
     // Move the offset back one row, such that it is now on the last 
     // row, rather than off the edge of the screen.
     cursor_offset -= MAX_COLS;
     // Return the updated cursor position.
-    return cursor_offset; 
+    return cursor_offset;
 }

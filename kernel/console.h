@@ -16,5 +16,11 @@
 
 // Public kernel API
 void clear_screen();
+
 void kprint_at(char *message, int col, int row);
+
 void kprint(char *message);
+
+void kprint_char(char c);
+
+void kprint_uint32(uint32_t val);
