@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-if (APPLE)
+if (CMAKE_HOST_APPLE AND CMAKE_C_LINK_FLAGS)
 	string(REPLACE "-Wl,-search_paths_first" "" CMAKE_C_LINK_FLAGS ${CMAKE_C_LINK_FLAGS})
 endif ()
 
@@ -12,7 +12,7 @@ add_subdirectory(boot)
 add_subdirectory(kernel)
 add_subdirectory(libc)
 
-if (APPLE)
+if (CMAKE_HOST_APPLE)
 	set(CMAKE_C_COMPILER i386-elf-gcc)
 endif ()
 

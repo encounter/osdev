@@ -4,7 +4,7 @@ project(kernel)
 set(CMAKE_ASM_NASM_OBJECT_FORMAT elf)
 enable_language(ASM_NASM)
 
-if (APPLE)
+if (CMAKE_HOST_APPLE)
   set(CMAKE_C_COMPILER i386-elf-gcc)
   set(CMAKE_AR i386-elf-ar)
   set(CMAKE_RANLIB i386-elf-ranlib)
