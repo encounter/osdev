@@ -1,5 +1,6 @@
-// #include "common.h"
+#include "drivers/ports.h"
 #include "descriptor_tables.h"
+#include "isr.h"
 
 #include <string.h>
 
@@ -20,11 +21,14 @@ gdt_ptr_t gdt_ptr;
 idt_entry_t idt_entries[256];
 idt_ptr_t idt_ptr;
 
+extern isr_t interrupt_handlers[];
+
 // Initialisation routine - zeroes all the interrupt service routines,
 // initialises the GDT and IDT.
 void init_descriptor_tables() {
     init_gdt();
     init_idt();
+    memset(&interrupt_handlers, 0, sizeof(isr_t) * 256);
 }
 
 static void init_gdt() {
@@ -59,16 +63,28 @@ static void init_idt() {
 
     memset(&idt_entries, 0, sizeof(idt_entry_t) * 256);
 
-    idt_set_gate(0,  (uint32_t) isr0,  0x08, 0x8E);
-    idt_set_gate(1,  (uint32_t) isr1,  0x08, 0x8E);
-    idt_set_gate(2,  (uint32_t) isr2,  0x08, 0x8E);
-    idt_set_gate(3,  (uint32_t) isr3,  0x08, 0x8E);
-    idt_set_gate(4,  (uint32_t) isr4,  0x08, 0x8E);
-    idt_set_gate(5,  (uint32_t) isr5,  0x08, 0x8E);
-    idt_set_gate(6,  (uint32_t) isr6,  0x08, 0x8E);
-    idt_set_gate(7,  (uint32_t) isr7,  0x08, 0x8E);
-    idt_set_gate(8,  (uint32_t) isr8,  0x08, 0x8E);
-    idt_set_gate(9,  (uint32_t) isr9,  0x08, 0x8E);
+    // Remap the irq table.
+    port_byte_out(0x20, 0x11);
+    port_byte_out(0xA0, 0x11);
+    port_byte_out(0x21, 0x20);
+    port_byte_out(0xA1, 0x28);
+    port_byte_out(0x21, 0x04);
+    port_byte_out(0xA1, 0x02);
+    port_byte_out(0x21, 0x01);
+    port_byte_out(0xA1, 0x01);
+    port_byte_out(0x21, 0x0);
+    port_byte_out(0xA1, 0x0);
+
+    idt_set_gate(0, (uint32_t) isr0, 0x08, 0x8E);
+    idt_set_gate(1, (uint32_t) isr1, 0x08, 0x8E);
+    idt_set_gate(2, (uint32_t) isr2, 0x08, 0x8E);
+    idt_set_gate(3, (uint32_t) isr3, 0x08, 0x8E);
+    idt_set_gate(4, (uint32_t) isr4, 0x08, 0x8E);
+    idt_set_gate(5, (uint32_t) isr5, 0x08, 0x8E);
+    idt_set_gate(6, (uint32_t) isr6, 0x08, 0x8E);
+    idt_set_gate(7, (uint32_t) isr7, 0x08, 0x8E);
+    idt_set_gate(8, (uint32_t) isr8, 0x08, 0x8E);
+    idt_set_gate(9, (uint32_t) isr9, 0x08, 0x8E);
     idt_set_gate(10, (uint32_t) isr10, 0x08, 0x8E);
     idt_set_gate(11, (uint32_t) isr11, 0x08, 0x8E);
     idt_set_gate(12, (uint32_t) isr12, 0x08, 0x8E);
@@ -91,6 +107,23 @@ static void init_idt() {
     idt_set_gate(29, (uint32_t) isr29, 0x08, 0x8E);
     idt_set_gate(30, (uint32_t) isr30, 0x08, 0x8E);
     idt_set_gate(31, (uint32_t) isr31, 0x08, 0x8E);
+
+    idt_set_gate(IRQ0, (uint32_t) irq0, 0x08, 0x8E);
+    idt_set_gate(IRQ1, (uint32_t) irq1, 0x08, 0x8E);
+    idt_set_gate(IRQ2, (uint32_t) irq2, 0x08, 0x8E);
+    idt_set_gate(IRQ3, (uint32_t) irq3, 0x08, 0x8E);
+    idt_set_gate(IRQ4, (uint32_t) irq4, 0x08, 0x8E);
+    idt_set_gate(IRQ5, (uint32_t) irq5, 0x08, 0x8E);
+    idt_set_gate(IRQ6, (uint32_t) irq6, 0x08, 0x8E);
+    idt_set_gate(IRQ7, (uint32_t) irq7, 0x08, 0x8E);
+    idt_set_gate(IRQ8, (uint32_t) irq8, 0x08, 0x8E);
+    idt_set_gate(IRQ9, (uint32_t) irq9, 0x08, 0x8E);
+    idt_set_gate(IRQ10, (uint32_t) irq10, 0x08, 0x8E);
+    idt_set_gate(IRQ11, (uint32_t) irq11, 0x08, 0x8E);
+    idt_set_gate(IRQ12, (uint32_t) irq12, 0x08, 0x8E);
+    idt_set_gate(IRQ13, (uint32_t) irq13, 0x08, 0x8E);
+    idt_set_gate(IRQ14, (uint32_t) irq14, 0x08, 0x8E);
+    idt_set_gate(IRQ15, (uint32_t) irq15, 0x08, 0x8E);
 
     idt_flush((uintptr_t) &idt_ptr);
 }

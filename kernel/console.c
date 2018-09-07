@@ -56,20 +56,22 @@ void kprint_char(char c) {
     print_char(c, get_offset_col(offset), get_offset_row(offset), WHITE_ON_BLACK);
 }
 
-// FIXME this kinda sucks
+// FIXME get rid of evil macros
 #define to_hex(c) ((char) ((c) > 9 ? (c) + 0x37 : (c) + 0x30))
-char hextemp[8];
+#define phexchar(shr) c = val >> (shr) & 0xF; if (c || i > 2) hextemp[i++] = to_hex(c)
+char hextemp[10] = {'0', 'x'};
 
 void kprint_uint32(uint32_t val) {
-    kprint("0x");
-    hextemp[0] = to_hex(val >> 28 & 0xF);
-    hextemp[1] = to_hex(val >> 24 & 0xF);
-    hextemp[2] = to_hex(val >> 20 & 0xF);
-    hextemp[3] = to_hex(val >> 16 & 0xF);
-    hextemp[4] = to_hex(val >> 12 & 0xF);
-    hextemp[5] = to_hex(val >> 8 & 0xF);
-    hextemp[6] = to_hex(val >> 4 & 0xF);
-    hextemp[7] = to_hex(val & 0xF);
+    uint8_t i = 2, c;
+    phexchar(28);
+    phexchar(24);
+    phexchar(20);
+    phexchar(16);
+    phexchar(12);
+    phexchar(8);
+    phexchar(4);
+    phexchar(0);
+    if (i < 10) hextemp[i] = 0;
     kprint(hextemp);
 }
 
