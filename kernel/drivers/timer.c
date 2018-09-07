@@ -19,12 +19,18 @@ void init_timer(uint32_t frequency) {
     // The value we send to the PIT is the value to divide it's input clock
     // (1193180 Hz) by, to get our required frequency. Important to note is
     // that the divisor must be small enough to fit into 16-bits.
-    uint32_t divisor = 1193180 / frequency;
+    uint16_t divisor = (uint16_t) (1193180 / frequency);
 
     // Send the command byte.
-    port_byte_out(0x43, 0x36);
+    port_byte_out(I86_PIT_REG_COMMAND, 0x36);
 
     // Send the frequency divisor.
-    port_byte_out(0x40, (uint8_t) (divisor & 0xFF));
-    port_byte_out(0x40, (uint8_t) (divisor >> 8 & 0xFF));
+    port_byte_out(I86_PIT_REG_COUNTER0, (uint8_t) (divisor & 0xFF));
+    port_byte_out(I86_PIT_REG_COUNTER0, (uint8_t) (divisor >> 8 & 0xFF));
+
+    tick = 0;
+}
+
+uint32_t get_tick() {
+    return tick;
 }
