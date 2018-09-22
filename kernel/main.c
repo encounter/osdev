@@ -8,6 +8,7 @@
 #include <stdnoreturn.h>
 #include <string.h>
 #include <stdbool.h>
+#include <malloc.h>
 
 static void kb_cb(registers_t regs);
 
@@ -20,6 +21,39 @@ void noreturn __attribute__((unused)) _start() {
     kprint("Initializing timer...\n");
     init_timer(1);
 
+    void *ptr[40];
+    for (int i = 0; i < sizeof(ptr); i++) {
+        ptr[i] = malloc(0x4);
+    }
+    for (int i = 0; i < sizeof(ptr); i++) {
+        free(ptr[i]);
+    }
+
+    void *p1 = malloc(0x100);
+    kprint_uint32((uintptr_t) p1); kprint_char('\n');
+    void *p2 = malloc(0x100);
+    kprint_uint32((uintptr_t) p2); kprint_char('\n');
+    print_chunk_debug(p1);
+    print_chunk_debug(p2);
+
+    free(p1);
+//    free(p2);
+    print_chunk_debug(p1);
+//    print_chunk_debug(p2);
+
+    void *p3 = malloc(0x8);
+    kprint_uint32((uintptr_t) p3); kprint_char('\n');
+    void *p4 = malloc(0x8);
+    kprint_uint32((uintptr_t) p4); kprint_char('\n');
+    print_chunk_debug(p3);
+    print_chunk_debug(p4);
+
+    void *p5 = malloc(0x4);
+    kprint_uint32((uintptr_t) p5); kprint_char('\n');
+    print_chunk_debug(p3);
+    print_chunk_debug(p4);
+    print_chunk_debug(p5);
+
     kprint("Setting up IRQ handlers...\n");
     register_interrupt_handler(IRQ1, &kb_cb);
     register_interrupt_handler(IRQ12, &mouse_cb);
@@ -27,9 +61,9 @@ void noreturn __attribute__((unused)) _start() {
     kprint("Enabling maskable interrupts...\n");
     __asm__ volatile("sti");
 
-    kprint("Waiting for tick 0x100...");
-    while (get_tick() < 0x100) {}
-    clear_screen();
+//    kprint("Waiting for tick 0x100...");
+//    while (get_tick() < 0x100) {}
+//    clear_screen();
 
     while (1) {}
 }
