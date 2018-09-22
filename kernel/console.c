@@ -58,7 +58,7 @@ void kprint_char(char c) {
 
 // FIXME get rid of evil macros
 #define to_hex(c) ((char) ((c) > 9 ? (c) + 0x37 : (c) + 0x30))
-#define phexchar(shr) c = val >> (shr) & 0xF; if (c || i > 2) hextemp[i++] = to_hex(c)
+#define phexchar(shr) c = val >> (shr) & 0xF; if (c || i > 2 || !shr) hextemp[i++] = to_hex(c)
 char hextemp[10] = {'0', 'x'};
 
 void kprint_uint32(uint32_t val) {

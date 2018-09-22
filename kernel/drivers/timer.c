@@ -7,9 +7,9 @@ uint32_t tick = 0;
 
 static void timer_callback(registers_t regs) {
     tick++;
-    kprint("Tick: ");
-    kprint_uint32(tick);
-    kprint_char('\n');
+//    kprint("Tick: ");
+//    kprint_uint32(tick);
+//    kprint_char('\n');
 }
 
 void init_timer(uint32_t frequency) {
