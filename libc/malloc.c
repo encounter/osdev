@@ -2,7 +2,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define MALLOC_DEBUG
+// #define MALLOC_DEBUG
 
 #ifdef MALLOC_DEBUG
 extern void kprint(char *message);
@@ -10,7 +10,7 @@ extern void kprint_uint32(uint32_t val);
 #endif
 
 static uintptr_t memory_start = 0x1000000;
-static uintptr_t memory_end = 0x2000000; // obviously don't want to keep this
+static uintptr_t memory_end = 0x2000000; // obviously don't want to keep this...
 static bool initial_alloc = true;
 
 struct chunk_header {
@@ -18,17 +18,19 @@ struct chunk_header {
     struct chunk_header *prev;
     bool used;
     size_t size;
-}; // __attribute__((packed))
+}/* __attribute__((packed))*/;
 
-_Static_assert(sizeof(struct chunk_header) == 0x10, "Header size wrong");
+_Static_assert(sizeof(struct chunk_header) == 0x10, "chunk_header size is wrong");
 
 static bool try_reclaim(struct chunk_header *start, size_t size) {
-    struct chunk_header *header = start;
-    size_t unused = header->size;
+    struct chunk_header *current_chunk = start;
+    if (current_chunk->next == NULL) return false;
 
-    header = header->next;
-    while (!header->used) {
-        if (header->next == NULL) {
+    size_t unused = current_chunk->size;
+    current_chunk = current_chunk->next;
+    while (!current_chunk->used) {
+        struct chunk_header *next_chunk = current_chunk->next;
+        if (next_chunk == NULL) {
 #ifdef MALLOC_DEBUG
             kprint("unused until end of chunks\n");
 #endif
@@ -36,16 +38,16 @@ static bool try_reclaim(struct chunk_header *start, size_t size) {
             return true;
         }
 
-        unused += ((void *) header) - ((void *) header->prev);
+        unused += ((void *) current_chunk) - ((void *) current_chunk->prev);
 #ifdef MALLOC_DEBUG
         kprint("found unused size "); kprint_uint32(unused); kprint("\n");
 #endif
         if (unused >= size) {
-            header->next->prev = start;
-            start->next = header->next;
+            next_chunk->prev = start;
+            start->next = next_chunk;
             return true;
         }
-        header = header->next;
+        current_chunk = next_chunk;
     }
     return false;
 }
@@ -70,13 +72,13 @@ static uintptr_t find_unused_chunk(const size_t chunk_size) {
     while (true) {
         if (!header->used) {
             if (header->size >= chunk_size) {
-                // If unused chunk is large enough, go ahead and use it
+                // Unused chunk is large enough, go ahead and use it
 #ifdef MALLOC_DEBUG
                 kprint("reusing large enough chunk "); kprint_uint32(header->size); kprint(" for "); kprint_uint32(chunk_size); kprint("\n");
 #endif
                 return (uintptr_t) header;
-            } else if (header->next != NULL && try_reclaim(header, chunk_size)) {
-                // If there's a next chunk, and we're able to reclaim enough unused space
+            } else if (try_reclaim(header, chunk_size)) {
+                // There's a next chunk, and we were able to reclaim enough unused space
                 return (uintptr_t) header;
             }
         }
@@ -138,6 +140,20 @@ void free(void *ptr) {
 #ifdef MALLOC_DEBUG
     kprint("freeing chunk w/ size "); kprint_uint32(header->size); kprint("\n");
 #endif
+}
+
+void *realloc(void *ptr, size_t new_size) {
+    if (ptr == NULL) return NULL;
+    struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
+    if (header->size >= new_size || try_reclaim(header, new_size)) {
+        header->size = new_size;
+        return ptr;
+    }
+
+    void *new = malloc(new_size);
+    memcpy(new, ptr, header->size);
+    free(ptr);
+    return new;
 }
 
 void print_chunk_debug(void *ptr) {

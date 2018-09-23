@@ -19,4 +19,5 @@ add_library(kernel STATIC
   isr
   main
   drivers/ports
-  drivers/timer)
+  drivers/timer
+  drivers/keyboard)

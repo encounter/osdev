@@ -75,6 +75,12 @@ void kprint_uint32(uint32_t val) {
     kprint(hextemp);
 }
 
+void kprint_backspace() {
+    int offset = get_cursor_offset() - 1;
+    print_char(' ', get_offset_col(offset), get_offset_row(offset), WHITE_ON_BLACK);
+    set_cursor_offset(offset);
+}
+
 
 /**********************************************************
  * Private kernel functions                               *

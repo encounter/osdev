@@ -24,3 +24,5 @@ void kprint(char *message);
 void kprint_char(char c);
 
 void kprint_uint32(uint32_t val);
+
+void kprint_backspace();
