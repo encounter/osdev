@@ -1,2 +1,1 @@
-cat boot/boot.bin kernel.bin boot/zero.bin > os.img
-qemu-system-i386 -drive file=os.img,format=raw -device isa-debug-exit,iobase=0xf4,iosize=0x04 -s
+qemu-system-i386 -kernel kernel.bin -device isa-debug-exit,iobase=0xf4,iosize=0x04 -s

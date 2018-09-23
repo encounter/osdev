@@ -25,7 +25,7 @@ extern isr_t interrupt_handlers[];
 
 // Initialisation routine - zeroes all the interrupt service routines,
 // initialises the GDT and IDT.
-void init_descriptor_tables() {
+void __attribute__((unused)) init_descriptor_tables() {
     init_gdt();
     init_idt();
 }

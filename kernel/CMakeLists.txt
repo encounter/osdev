@@ -18,6 +18,7 @@ add_library(kernel STATIC
   interrupt.asm
   isr
   main
+  shell
   drivers/ports
   drivers/timer
   drivers/keyboard

@@ -11,6 +11,8 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 void __attribute__((unused)) isr_handler(registers_t regs) {
     kprint("Received interrupt: ");
     kprint_uint32(regs.int_no);
+    kprint(" @ ");
+    kprint_uint32(regs.eip);
     kprint_char('\n');
 }
 

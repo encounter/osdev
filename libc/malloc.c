@@ -4,10 +4,8 @@
 
 // #define MALLOC_DEBUG
 
-#ifdef MALLOC_DEBUG
 extern void kprint(char *message);
 extern void kprint_uint32(uint32_t val);
-#endif
 
 static uintptr_t memory_start = 0x1000000;
 static uintptr_t memory_end = 0x2000000; // obviously don't want to keep this...
@@ -143,7 +141,7 @@ void free(void *ptr) {
 }
 
 void *realloc(void *ptr, size_t new_size) {
-    if (ptr == NULL) return NULL;
+    if (ptr == NULL) return malloc(new_size);
     struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
     if (header->size >= new_size || try_reclaim(header, new_size)) {
         header->size = new_size;
@@ -156,8 +154,8 @@ void *realloc(void *ptr, size_t new_size) {
     return new;
 }
 
-void print_chunk_debug(void *ptr) {
-#ifdef MALLOC_DEBUG
+void print_chunk_debug(void *ptr, bool recursive) {
+    if (ptr == NULL) ptr = (void *) memory_start + sizeof(struct chunk_header);
     struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
     kprint("chunk @ "); kprint_uint32((uintptr_t) header);
     kprint(" | next: "); kprint_uint32((uintptr_t) header->next);
@@ -165,5 +163,5 @@ void print_chunk_debug(void *ptr) {
     kprint(", used: "); kprint_uint32((uint32_t) header->used);
     kprint(", size: "); kprint_uint32((uint32_t) header->size);
     kprint("\n");
-#endif
+    if (recursive && header->next) print_chunk_debug((void *) header->next + sizeof(struct chunk_header), recursive);
 }

@@ -6,8 +6,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
+#include <math.h>
 
 typedef void (*shell_callback)(char *input);
+
 static shell_callback shell_cb = NULL;
 
 #define BACKSPACE 0x0E
@@ -52,8 +54,8 @@ static bool key_buffer_append(const char c) {
     if (key_buffer == NULL) {
         key_buffer = malloc(key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
         if (key_buffer == NULL) return false;
-    } else if (key_buffer_size == key_buffer_used) {
-        key_buffer = realloc(key_buffer, key_buffer_size = key_buffer_size + 0x100);
+    } else if (key_buffer_size + 1 <= key_buffer_used) {
+        key_buffer = realloc(key_buffer, key_buffer_size += KEY_BUFFER_INITIAL_SIZE);
         if (key_buffer == NULL) return false;
     }
 
@@ -109,4 +111,11 @@ static void irq_callback(__attribute__((unused)) registers_t regs) {
 void init_keyboard(shell_callback cb) {
     register_interrupt_handler(IRQ1, &irq_callback);
     shell_cb = cb; // Having this shell logic in here is wrong, but...
+}
+
+void key_buffer_set(char *input) {
+    key_buffer_used = strlen(input);
+    key_buffer = realloc(key_buffer, max(key_buffer_used, KEY_BUFFER_INITIAL_SIZE));
+    if (key_buffer == NULL) return; // return error of some sort?
+    strncpy(key_buffer, input, key_buffer_used);
 }
