@@ -7,6 +7,9 @@
 #include <string.h>
 #include <malloc.h>
 
+typedef void (*shell_callback)(char *input);
+static shell_callback shell_cb = NULL;
+
 #define BACKSPACE 0x0E
 #define ENTER 0x1C
 #define L_SHIFT 0x2A
@@ -80,9 +83,7 @@ static void irq_callback(__attribute__((unused)) registers_t regs) {
             kprint_backspace();
         }
     } else if (c == ENTER) {
-        kprint_char('\n');
-        kprint(key_buffer);
-        kprint_char('\n');
+        if (shell_cb != NULL) shell_cb(key_buffer);
         key_buffer_clear();
     }
 
@@ -105,6 +106,7 @@ static void irq_callback(__attribute__((unused)) registers_t regs) {
     }
 }
 
-void init_keyboard() {
+void init_keyboard(shell_callback cb) {
     register_interrupt_handler(IRQ1, &irq_callback);
+    shell_cb = cb; // Having this shell logic in here is wrong, but...
 }

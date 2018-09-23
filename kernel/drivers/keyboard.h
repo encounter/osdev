@@ -1,1 +1,1 @@
-void init_keyboard();
+void init_keyboard(void (*shell_callback)(char *input));

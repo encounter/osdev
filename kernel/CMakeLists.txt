@@ -20,4 +20,5 @@ add_library(kernel STATIC
   main
   drivers/ports
   drivers/timer
-  drivers/keyboard)
+  drivers/keyboard
+  drivers/acpi)
