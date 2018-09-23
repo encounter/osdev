@@ -12,8 +12,8 @@ void noreturn __attribute__((unused)) kernel_main() {
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");
-#endif
     init_timer(1);
+#endif
 
 #ifdef KDEBUG
     kprint("Setting up IRQ handlers...\n");
@@ -31,5 +31,5 @@ void noreturn __attribute__((unused)) kernel_main() {
     clear_screen();
 #endif
 
-    while (1) {}
+    while (1) __asm__ volatile("hlt");
 }
