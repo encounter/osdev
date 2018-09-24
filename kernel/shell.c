@@ -2,6 +2,7 @@
 #include "drivers/acpi.h"
 #include "drivers/keyboard.h"
 #include "drivers/ports.h"
+#include "tests/tests.h"
 
 #include <string.h>
 #include <malloc.h>
@@ -40,6 +41,12 @@ static void shell_callback(char *input) {
             kprint_char('\n');
         }
         ret = 0;
+    } else if (strcmp(input, "test vector") == 0) {
+        ret = (unsigned char) !vc_vector_run_tests();
+    } else if (strcmp(input, "test") == 0 ||
+               strncmp(input, "test ", 5) == 0) {
+        kprint("Available tests:\n");
+        kprint("  vector\n");
     }
     kprint_uint32(ret);
     kprint(" # ");

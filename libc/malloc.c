@@ -7,8 +7,8 @@
 extern void kprint(char *message);
 extern void kprint_uint32(uint32_t val);
 
-static uintptr_t memory_start = 0x1000000;
-static uintptr_t memory_end = 0x2000000; // obviously don't want to keep this...
+static void *memory_start = (void *) 0x1000000;
+static void *memory_end = (void *) 0x2000000; // obviously don't want to keep this...
 static bool initial_alloc = true;
 
 struct chunk_header {
@@ -50,7 +50,7 @@ static bool try_reclaim(struct chunk_header *start, size_t size) {
     return false;
 }
 
-static uintptr_t find_unused_chunk(const size_t chunk_size) {
+static void *find_unused_chunk(const size_t chunk_size) {
     if (initial_alloc) {
         if (memory_start + sizeof(struct chunk_header) + chunk_size > memory_end)
             return NULL;
@@ -74,10 +74,10 @@ static uintptr_t find_unused_chunk(const size_t chunk_size) {
 #ifdef MALLOC_DEBUG
                 kprint("reusing large enough chunk "); kprint_uint32(header->size); kprint(" for "); kprint_uint32(chunk_size); kprint("\n");
 #endif
-                return (uintptr_t) header;
+                return header;
             } else if (try_reclaim(header, chunk_size)) {
                 // There's a next chunk, and we were able to reclaim enough unused space
-                return (uintptr_t) header;
+                return header;
             }
         }
 
@@ -86,7 +86,7 @@ static uintptr_t find_unused_chunk(const size_t chunk_size) {
 #ifdef MALLOC_DEBUG
             kprint("alloc new chunk size: "); kprint_uint32(chunk_size); kprint("\n");
 #endif
-            uintptr_t next = (uintptr_t) ((void *) header) + sizeof(struct chunk_header) + header->size;
+            void *next = (void *) header + sizeof(struct chunk_header) + header->size;
             if (next + chunk_size > memory_end) break; // Don't overcommit new chunk
 
             struct chunk_header *next_header = (struct chunk_header *) next;
@@ -110,7 +110,7 @@ static uintptr_t find_unused_chunk(const size_t chunk_size) {
             next_header->prev = header;
             header->next->prev = next_header;
             header->next = next_header;
-            return end_of_chunk;
+            return (void *) end_of_chunk;
         }
 
         header = header->next;
@@ -120,7 +120,7 @@ static uintptr_t find_unused_chunk(const size_t chunk_size) {
 }
 
 void *malloc(size_t size) {
-    uintptr_t chunk = find_unused_chunk(size);
+    void *chunk = find_unused_chunk(size);
     if (chunk == NULL) {
         return NULL;
     }
@@ -128,7 +128,7 @@ void *malloc(size_t size) {
     struct chunk_header *header = (struct chunk_header *) chunk;
     header->used = true;
     header->size = size;
-    return ((void *) chunk) + sizeof(struct chunk_header);
+    return chunk + sizeof(struct chunk_header);
 }
 
 void free(void *ptr) {
@@ -155,7 +155,7 @@ void *realloc(void *ptr, size_t new_size) {
 }
 
 void print_chunk_debug(void *ptr, bool recursive) {
-    if (ptr == NULL) ptr = (void *) memory_start + sizeof(struct chunk_header);
+    if (ptr == NULL) ptr = memory_start + sizeof(struct chunk_header);
     struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
     kprint("chunk @ "); kprint_uint32((uintptr_t) header);
     kprint(" | next: "); kprint_uint32((uintptr_t) header->next);

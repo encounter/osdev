@@ -1,4 +1,4 @@
-#include "../../kernel/console.h"
+#include "../console.h"
 #include "vector.h"
 
 #include <string.h>
@@ -8,25 +8,25 @@
                                       kprint("Failed passing line "); kprint_uint32(__LINE__); \
                                       kprint(". Expected: "); kprint_uint32((uint32_t) expected); \
                                       kprint(". Actual: "); kprint_uint32((uint32_t) actual); \
-                                      return; \
+                                      return false; \
                                     }
 
 #define ASSERT_NE(not_expected, actual) if ((not_expected) == (actual)) { \
                                           kprint("Failed passing line "); kprint_uint32(__LINE__); \
                                           kprint(". Non expected actual value: "); kprint_uint32((uint32_t) actual); \
-                                          return; \
+                                          return false; \
                                         }
 
 #define ASSERT_TRUE(actual) ASSERT_EQ(true, (actual));
 
 // ----------------------------------------------------------------------------
 
-void test_vc_vector_create() {
+bool test_vc_vector_create() {
     const size_t size_of_type = sizeof(int);
     const size_t default_count_of_elements = vc_vector_get_default_count_of_elements();
 
     // Creating vector with default count of elements
-    vc_vector* vector = vc_vector_create(0, size_of_type, NULL);
+    vc_vector *vector = vc_vector_create(0, size_of_type, NULL);
     ASSERT_NE(NULL, vector);
     ASSERT_EQ(0, vc_vector_count(vector));
     ASSERT_EQ(0, vc_vector_size(vector));
@@ -55,7 +55,7 @@ void test_vc_vector_create() {
         ASSERT_TRUE(vc_vector_push_back(vector, &i));
     }
 
-    vc_vector* vector_copy = vc_vector_create_copy(vector);
+    vc_vector *vector_copy = vc_vector_create_copy(vector);
     ASSERT_NE(NULL, vector_copy);
     ASSERT_TRUE(vc_vector_is_equals(vector, vector_copy));
 
@@ -64,35 +64,37 @@ void test_vc_vector_create() {
 
     kprint(__PRETTY_FUNCTION__);
     kprint(" passed.\n");
+    return true;
 }
 
-void test_vc_vector_element_access() {
+bool test_vc_vector_element_access() {
     const int test_num_start = 18;
     const int test_num_end = 36;
     const size_t size_of_type = sizeof(test_num_start);
 
-    vc_vector* vector = vc_vector_create(0, size_of_type, NULL);
+    vc_vector *vector = vc_vector_create(0, size_of_type, NULL);
     ASSERT_NE(0, vector);
     for (int i = test_num_start; i <= test_num_end; ++i) {
         ASSERT_TRUE(vc_vector_push_back(vector, &i));
     }
 
-    ASSERT_EQ(test_num_start, *(int*)vc_vector_front(vector));
-    ASSERT_EQ(test_num_start, *(int*)vc_vector_data(vector));
-    ASSERT_EQ(test_num_end, *(int*)vc_vector_back(vector));
+    ASSERT_EQ(test_num_start, *(int *) vc_vector_front(vector));
+    ASSERT_EQ(test_num_start, *(int *) vc_vector_data(vector));
+    ASSERT_EQ(test_num_end, *(int *) vc_vector_back(vector));
 
     for (int i = test_num_start, j = 0; i <= test_num_end; ++i, ++j) {
-        ASSERT_EQ(i, *(int*)vc_vector_at(vector, j));
+        ASSERT_EQ(i, *(int *) vc_vector_at(vector, j));
     }
 
     vc_vector_release(vector);
 
     kprint(__PRETTY_FUNCTION__);
     kprint(" passed.\n");
+    return true;
 }
 
-void test_vc_vector_iterators() {
-    vc_vector* vector = vc_vector_create(0, sizeof(int), NULL);
+bool test_vc_vector_iterators() {
+    vc_vector *vector = vc_vector_create(0, sizeof(int), NULL);
     ASSERT_NE(NULL, vector);
 
     const int test_count_of_elements = 23;
@@ -101,8 +103,8 @@ void test_vc_vector_iterators() {
     }
 
     int j = 0;
-    for (void* i = vc_vector_begin(vector); i != vc_vector_end(vector); i = vc_vector_next(vector, i)) {
-        ASSERT_EQ(j++, *(int*)i);
+    for (void *i = vc_vector_begin(vector); i != vc_vector_end(vector); i = vc_vector_next(vector, i)) {
+        ASSERT_EQ(j++, *(int *) i);
     }
 
     ASSERT_EQ(test_count_of_elements, j);
@@ -110,9 +112,10 @@ void test_vc_vector_iterators() {
 
     kprint(__PRETTY_FUNCTION__);
     kprint(" passed.\n");
+    return true;
 }
 
-void test_vc_vector_capacity() {
+bool test_vc_vector_capacity() {
     const int size_of_element = sizeof(int);
     const float growth_factor = vc_vector_get_growth_factor();
     ASSERT_EQ(1.5, growth_factor);
@@ -124,7 +127,7 @@ void test_vc_vector_capacity() {
     const int max_count_of_vector_ended = count_of_elements_initialized * growth_factor;
     const int max_size_of_vector_ended = max_count_of_vector_ended * size_of_element;
 
-    vc_vector* vector = vc_vector_create(count_of_elements_initialized, size_of_element, NULL);
+    vc_vector *vector = vc_vector_create(count_of_elements_initialized, size_of_element, NULL);
     ASSERT_NE(NULL, vector);
 
     ASSERT_EQ(0, vc_vector_count(vector));
@@ -165,9 +168,10 @@ void test_vc_vector_capacity() {
 
     kprint(__PRETTY_FUNCTION__);
     kprint(" passed.\n");
+    return true;
 }
 
-void test_vc_vector_modifiers() {
+bool test_vc_vector_modifiers() {
     const int begin[] = {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
     };
@@ -184,16 +188,16 @@ void test_vc_vector_modifiers() {
             /* 1, 2, 3, */ 4, 5, 6, 7, 8, /* 9, 10, 11, 12, */ 13, 14, 15, 16, 17, /* 18, 19, 20 */
     };
 
-    vc_vector* vector = vc_vector_create(0, size_of_element, NULL);
+    vc_vector *vector = vc_vector_create(0, size_of_element, NULL);
     ASSERT_NE(NULL, vector);
 
     // Append test
 
-    ASSERT_EQ(true, vc_vector_append(vector, (void*)begin, count_of_elements));
+    ASSERT_EQ(true, vc_vector_append(vector, (void *) begin, count_of_elements));
 
     ASSERT_EQ(count_of_elements, vc_vector_count(vector));
     for (int i = 0; i < vc_vector_count(vector); ++i) {
-        ASSERT_EQ(begin[i], *(int*)vc_vector_at(vector, i));
+        ASSERT_EQ(begin[i], *(int *) vc_vector_at(vector, i));
     }
 
     // Pop back test
@@ -207,18 +211,18 @@ void test_vc_vector_modifiers() {
     // Push back test
 
     for (int i = 0; i < count_of_elements; ++i) {
-        ASSERT_EQ(true, vc_vector_push_back(vector, (void*)&begin[i]));
+        ASSERT_EQ(true, vc_vector_push_back(vector, (void *) &begin[i]));
     }
 
     ASSERT_EQ(count_of_elements, vc_vector_count(vector));
     for (int i = 0; i < vc_vector_count(vector); ++i) {
-        ASSERT_EQ(begin[i], *(int*)vc_vector_at(vector, i));
+        ASSERT_EQ(begin[i], *(int *) vc_vector_at(vector, i));
     }
 
     // Erase test
 
     vc_vector_clear(vector);
-    ASSERT_EQ(true, vc_vector_append(vector, (void*)begin, count_of_elements));
+    ASSERT_EQ(true, vc_vector_append(vector, (void *) begin, count_of_elements));
 
     ASSERT_EQ(true, vc_vector_erase(vector, 0));
     ASSERT_EQ(true, vc_vector_erase(vector, vc_vector_count(vector) - 1));
@@ -226,13 +230,13 @@ void test_vc_vector_modifiers() {
 
     ASSERT_EQ(sizeof(after_deleting_some_elements) / size_of_element, vc_vector_count(vector));
     for (int i = 0; i < vc_vector_count(vector); ++i) {
-        ASSERT_EQ(after_deleting_some_elements[i], *(int*)vc_vector_at(vector, i));
+        ASSERT_EQ(after_deleting_some_elements[i], *(int *) vc_vector_at(vector, i));
     }
 
     // Erase range test
 
     vc_vector_clear(vector);
-    ASSERT_EQ(true, vc_vector_append(vector, (void*)begin, count_of_elements));
+    ASSERT_EQ(true, vc_vector_append(vector, (void *) begin, count_of_elements));
 
     ASSERT_EQ(true, vc_vector_erase_range(vector, 0, 3));
     ASSERT_EQ(true, vc_vector_erase_range(vector, vc_vector_count(vector) - 3, vc_vector_count(vector)));
@@ -240,14 +244,14 @@ void test_vc_vector_modifiers() {
 
     ASSERT_EQ(sizeof(after_deleting_some_ranges) / size_of_element, vc_vector_count(vector));
     for (int i = 0; i < vc_vector_count(vector); ++i) {
-        ASSERT_EQ(after_deleting_some_ranges[i], *(int*)vc_vector_at(vector, i));
+        ASSERT_EQ(after_deleting_some_ranges[i], *(int *) vc_vector_at(vector, i));
     }
 
     // Insert test
 
     vc_vector_clear(vector);
     for (int i = 1; i < count_of_elements - 1; ++i) {
-        ASSERT_EQ(true, vc_vector_insert(vector, i - 1, (void*)&begin[i]));
+        ASSERT_EQ(true, vc_vector_insert(vector, i - 1, (void *) &begin[i]));
     }
 
     ASSERT_EQ(true, vc_vector_insert(vector, 0, &begin[0]));
@@ -255,22 +259,23 @@ void test_vc_vector_modifiers() {
 
     ASSERT_EQ(count_of_elements, vc_vector_count(vector));
     for (int i = 0; i < vc_vector_count(vector); ++i) {
-        ASSERT_EQ(begin[i], *(int*)vc_vector_at(vector, i));
+        ASSERT_EQ(begin[i], *(int *) vc_vector_at(vector, i));
     }
 
     vc_vector_release(vector);
 
     kprint(__PRETTY_FUNCTION__);
     kprint(" passed.\n");
+    return true;
 }
 
 void test_vc_vector_strfreefunc(void *data) {
-    free(*(char **)data);
+    free(*(char **) data);
 }
 
-void test_vc_vector_with_strfreefunc() {
+bool test_vc_vector_with_strfreefunc() {
     // creates a vector of pointers to char, i.e. a vector of variable sized strings
-    vc_vector* vector = vc_vector_create(3, sizeof(char *), test_vc_vector_strfreefunc);
+    vc_vector *vector = vc_vector_create(3, sizeof(char *), test_vc_vector_strfreefunc);
     ASSERT_NE(NULL, vector);
 
     char *strs[] = {
@@ -309,13 +314,14 @@ void test_vc_vector_with_strfreefunc() {
 
     kprint(__PRETTY_FUNCTION__);
     kprint(" passed.\n");
+    return true;
 }
 
-void vc_vector_run_tests() {
-    test_vc_vector_create();
-    test_vc_vector_element_access();
-    test_vc_vector_iterators();
-    test_vc_vector_capacity();
-    test_vc_vector_modifiers();
-    test_vc_vector_with_strfreefunc();
+bool vc_vector_run_tests() {
+    return test_vc_vector_create() &&
+           test_vc_vector_element_access() &&
+           test_vc_vector_iterators() &&
+           test_vc_vector_capacity() &&
+           test_vc_vector_modifiers() &&
+           test_vc_vector_with_strfreefunc();
 }

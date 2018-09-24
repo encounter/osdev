@@ -22,4 +22,6 @@ add_library(kernel STATIC
   drivers/ports
   drivers/timer
   drivers/keyboard
-  drivers/acpi)
+  drivers/acpi
+  tests/tests.h
+  tests/vector)

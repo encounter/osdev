@@ -4,13 +4,13 @@
 
 #include <string.h>
 
-extern void gdt_flush(uintptr_t gdt_ptr);
+extern void gdt_flush(gdt_ptr_t *gdt_ptr);
 
 static void init_gdt();
 
 static void gdt_set_gate(int32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
 
-extern void idt_flush(uintptr_t idt_ptr);
+extern void idt_flush(idt_ptr_t *idt_ptr);
 
 static void init_idt();
 
@@ -40,7 +40,7 @@ static void init_gdt() {
     gdt_set_gate(3, 0, 0xFFFFFFFF, 0b11111010, 0b11001111); // User mode code segment
     gdt_set_gate(4, 0, 0xFFFFFFFF, 0b11110010, 0b11001111); // User mode data segment
 
-    gdt_flush((uintptr_t) &gdt_ptr);
+    gdt_flush(&gdt_ptr);
 }
 
 // Set the value of one GDT entry.
@@ -122,7 +122,7 @@ static void init_idt() {
     idt_set_gate(IRQ14, (uint32_t) irq14, 0x08, 0x8E);
     idt_set_gate(IRQ15, (uint32_t) irq15, 0x08, 0x8E);
 
-    idt_flush((uintptr_t) &idt_ptr);
+    idt_flush(&idt_ptr);
 }
 
 

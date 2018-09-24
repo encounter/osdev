@@ -1,9 +1,9 @@
 #pragma once
 
+#include <stddef.h>
 #include <stdint.h>
 
 #define size_t uint32_t
-#define NULL 0
 
 void *memcpy(void *restrict destination, const void *restrict source, size_t num);
 
