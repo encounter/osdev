@@ -1,5 +1,6 @@
 #pragma once
 
-#include <stdnoreturn.h>
+#include <common.h>
 
-noreturn void reboot();
+_noreturn
+void reboot();

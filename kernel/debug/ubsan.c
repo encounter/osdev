@@ -17,12 +17,9 @@
  * Undefined behavior sanitizer runtime support.
  */
 
-#include <stdint.h>
-#include <stdnoreturn.h>
+#include <common.h>
 
 #include "../console.h"
-
-#define unused __attribute__((unused))
 
 struct ubsan_source_location
 {
@@ -47,7 +44,7 @@ static const struct ubsan_source_location unknown_location =
                 0,
         };
 
-noreturn
+_noreturn
 static void ubsan_abort(const struct ubsan_source_location* location,
                         const char* violation)
 {
@@ -60,12 +57,11 @@ static void ubsan_abort(const struct ubsan_source_location* location,
     kprint_uint32(location->line);
     kprint_char(':');
     kprint_uint32(location->column);
-    __asm__("cli");
-    while (1) __asm__("hlt");
+    panic(NULL);
 }
 
 #define ABORT_VARIANT(name, params, call) \
-noreturn \
+_noreturn \
 void __ubsan_handle_##name##_abort params \
 { \
 	__ubsan_handle_##name call; \
@@ -89,7 +85,7 @@ struct ubsan_type_mismatch_data
     unsigned char type_check_kind;
 };
 
-unused
+_unused
 void __ubsan_handle_type_mismatch_v1(void* data_raw,
                                   void* pointer_raw)
 {
@@ -112,7 +108,7 @@ struct ubsan_overflow_data
     struct ubsan_type_descriptor* type;
 };
 
-unused
+_unused
 void __ubsan_handle_add_overflow(void* data_raw,
                                  void* lhs_raw,
                                  void* rhs_raw)
@@ -127,7 +123,7 @@ void __ubsan_handle_add_overflow(void* data_raw,
 
 ABORT_VARIANT_VP_VP_VP(add_overflow);
 
-unused
+_unused
 void __ubsan_handle_sub_overflow(void* data_raw,
                                  void* lhs_raw,
                                  void* rhs_raw)
@@ -142,7 +138,7 @@ void __ubsan_handle_sub_overflow(void* data_raw,
 
 ABORT_VARIANT_VP_VP_VP(sub_overflow);
 
-unused
+_unused
 void __ubsan_handle_mul_overflow(void* data_raw,
                                  void* lhs_raw,
                                  void* rhs_raw)
@@ -157,7 +153,7 @@ void __ubsan_handle_mul_overflow(void* data_raw,
 
 ABORT_VARIANT_VP_VP_VP(mul_overflow);
 
-unused
+_unused
 void __ubsan_handle_negate_overflow(void* data_raw,
                                     void* old_value_raw)
 {
@@ -169,7 +165,7 @@ void __ubsan_handle_negate_overflow(void* data_raw,
 
 ABORT_VARIANT_VP_VP(negate_overflow);
 
-unused
+_unused
 void __ubsan_handle_divrem_overflow(void* data_raw,
                                     void* lhs_raw,
                                     void* rhs_raw)
@@ -191,7 +187,7 @@ struct ubsan_shift_out_of_bounds_data
     struct ubsan_type_descriptor* rhs_type;
 };
 
-unused
+_unused
 void __ubsan_handle_shift_out_of_bounds(void* data_raw,
                                         void* lhs_raw,
                                         void* rhs_raw)
@@ -214,7 +210,7 @@ struct ubsan_out_of_bounds_data
     struct ubsan_type_descriptor* index_type;
 };
 
-unused
+_unused
 void __ubsan_handle_out_of_bounds(void* data_raw,
                                   void* index_raw)
 {
@@ -232,7 +228,7 @@ struct ubsan_unreachable_data
     struct ubsan_source_location location;
 };
 
-noreturn unused
+_noreturn _unused
 void __ubsan_handle_builtin_unreachable(void* data_raw)
 {
     struct ubsan_unreachable_data* data =
@@ -240,7 +236,7 @@ void __ubsan_handle_builtin_unreachable(void* data_raw)
     ubsan_abort(&data->location, "reached unreachable");
 }
 
-noreturn unused
+_noreturn _unused
 void __ubsan_handle_missing_return(void* data_raw)
 {
     struct ubsan_unreachable_data* data =
@@ -254,7 +250,7 @@ struct ubsan_vla_bound_data
     struct ubsan_type_descriptor* type;
 };
 
-unused
+_unused
 void __ubsan_handle_vla_bound_not_positive(void* data_raw,
                                            void* bound_raw)
 {
@@ -279,7 +275,7 @@ struct ubsan_float_cast_overflow_data
     struct ubsan_type_descriptor* to_type;
 };
 
-unused
+_unused
 void __ubsan_handle_float_cast_overflow(void* data_raw,
                                         void* from_raw)
 {
@@ -302,7 +298,7 @@ struct ubsan_invalid_value_data
     struct ubsan_type_descriptor* type;
 };
 
-unused
+_unused
 void __ubsan_handle_load_invalid_value(void* data_raw,
                                        void* value_raw)
 {
@@ -321,7 +317,7 @@ struct ubsan_function_type_mismatch_data
     struct ubsan_type_descriptor* type;
 };
 
-unused
+_unused
 void __ubsan_handle_function_type_mismatch(void* data_raw,
                                            void* value_raw)
 {
@@ -340,7 +336,7 @@ struct ubsan_nonnull_return_data
     struct ubsan_source_location attr_location;
 };
 
-unused
+_unused
 void __ubsan_handle_nonnull_return(void* data_raw)
 {
     struct ubsan_nonnull_return_data* data =
@@ -358,7 +354,7 @@ struct ubsan_nonnull_arg_data
 
 // TODO: GCC's libubsan does not have the second parameter, but its builtin
 //       somehow has it and conflict if we don't match it.
-unused
+_unused
 void __ubsan_handle_nonnull_arg(void* data_raw,
                                 intptr_t index_raw)
 {
@@ -377,7 +373,7 @@ struct ubsan_cfi_bad_icall_data
     struct ubsan_type_descriptor* type;
 };
 
-unused
+_unused
 void __ubsan_handle_cfi_bad_icall(void* data_raw,
                                   void* value_raw)
 {
@@ -391,7 +387,7 @@ void __ubsan_handle_cfi_bad_icall(void* data_raw,
 
 ABORT_VARIANT_VP_VP(cfi_bad_icall);
 
-unused
+_unused
 void __ubsan_handle_pointer_overflow(void *data_raw,
                                      void *lhs_raw,
                                      void *rhs_raw) {

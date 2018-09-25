@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include <stdnoreturn.h>
+#include <common.h>
 
 #include "ports.h"
 
@@ -16,7 +15,8 @@
 #define check_flag(flags, n) ((flags) & bit(n))
 
 // Not actually ACPI, but I'll get there eventually.
-noreturn void reboot() {
+_noreturn
+void reboot() {
     uint8_t temp;
 
     __asm__ volatile("cli"); /* disable all interrupts */

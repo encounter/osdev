@@ -8,7 +8,8 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
     interrupt_handlers[n] = handler;
 }
 
-void __attribute__((unused)) isr_handler(registers_t regs) {
+_unused
+void isr_handler(registers_t regs) {
     kprint("Received interrupt: ");
     kprint_uint32(regs.int_no);
     kprint(" @ ");
@@ -16,7 +17,8 @@ void __attribute__((unused)) isr_handler(registers_t regs) {
     kprint_char('\n');
 }
 
-void __attribute__((unused)) irq_handler(registers_t regs) {
+_unused
+void irq_handler(registers_t regs) {
     // Send an EOI (end of interrupt) signal to the PICs.
     // If this interrupt involved the slave.
     if (regs.int_no >= IRQ8) {

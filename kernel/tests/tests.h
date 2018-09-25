@@ -1,5 +1,5 @@
 #pragma once
 
-#include <stdbool.h>
+#include <common.h>
 
 bool vc_vector_run_tests();

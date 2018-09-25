@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <common.h>
 
 #define IRQ0  32 // Timer
 #define IRQ1  33 // Keyboard

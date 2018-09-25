@@ -166,3 +166,24 @@ int handle_scrolling(int cursor_offset) {
     // Return the updated cursor position.
     return cursor_offset;
 }
+
+_noreturn
+void panic(char *str) {
+    if (str != NULL) kprint(str);
+    __asm__("cli");
+    while (1) __asm__("hlt");
+}
+
+#if UINT32_MAX == UINTPTR_MAX
+#define STACK_CHK_GUARD 0xe2dee396
+#else
+#define STACK_CHK_GUARD 0x595e9fbd94fda766
+#endif
+
+_unused
+uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
+
+_noreturn _unused
+void __stack_chk_fail() {
+    panic("Stack smashing detected");
+}

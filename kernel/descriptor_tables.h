@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <common.h>
 
 // This structure contains the value of one GDT entry.
 // We use the attribute 'packed' to tell GCC not to change
@@ -12,14 +12,14 @@ struct gdt_entry_struct {
     uint8_t access;              // Access flags, determine what ring this segment can be used in.
     uint8_t granularity;
     uint8_t base_high;           // The last 8 bits of the base.
-} __attribute__((packed));
+} _packed;
 
 typedef struct gdt_entry_struct gdt_entry_t;
 
 struct gdt_ptr_struct {
     uint16_t limit;               // The upper 16 bits of all selector limits.
     uint32_t base;                // The address of the first gdt_entry_t struct.
-} __attribute__((packed));
+} _packed;
 
 typedef struct gdt_ptr_struct gdt_ptr_t;
 
@@ -33,7 +33,7 @@ struct idt_entry_struct
     uint8_t  always0;             // This must always be zero.
     uint8_t  flags;               // More flags. See documentation.
     uint16_t base_hi;             // The upper 16 bits of the address to jump to.
-} __attribute__((packed));
+} _packed;
 typedef struct idt_entry_struct idt_entry_t;
 
 // A struct describing a pointer to an array of interrupt handlers.
@@ -42,7 +42,7 @@ struct idt_ptr_struct
 {
     uint16_t limit;
     uint32_t base;                // The address of the first element in our idt_entry_t array.
-} __attribute__((packed));
+} _packed;
 typedef struct idt_ptr_struct idt_ptr_t;
 
 // These extern directives let us access the addresses of our ASM ISR handlers.

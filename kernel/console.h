@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <common.h>
 
 #define VIDEO_ADDRESS ((volatile uint16_t *) 0xb8000)
 #define MAX_ROWS 25
@@ -26,3 +26,6 @@ void kprint_char(char c);
 void kprint_uint32(uint32_t val);
 
 void kprint_backspace();
+
+_noreturn
+void panic(char *str);

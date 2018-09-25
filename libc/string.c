@@ -1,5 +1,5 @@
+#include <common.h>
 #include <limits.h>
-#include <stdbool.h>
 #include <malloc.h>
 #include "../kernel/console.h"
 

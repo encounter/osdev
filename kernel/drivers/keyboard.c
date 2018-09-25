@@ -3,7 +3,7 @@
 #include "../console.h"
 #include "../isr.h"
 
-#include <stdbool.h>
+#include <common.h>
 #include <string.h>
 #include <malloc.h>
 #include <math.h>
@@ -75,7 +75,7 @@ static void key_buffer_clear() {
     }
 }
 
-static void irq_callback(__attribute__((unused)) registers_t regs) {
+static void irq_callback(_unused registers_t regs) {
     unsigned char c = port_byte_in(0x60);
     if (c == L_SHIFT || c == R_SHIFT) {
         shift_pressed = true;

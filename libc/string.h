@@ -1,9 +1,6 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
-#define size_t uint32_t
+#include <common.h>
 
 #define ALIGN(x, a)              __ALIGN_MASK(x,(__typeof__(x))(a)-1)
 #define __ALIGN_MASK(x, mask)    (((x)+(mask))&~(mask))

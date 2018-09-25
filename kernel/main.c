@@ -4,11 +4,12 @@
 #include "shell.h"
 #include "drivers/keyboard.h"
 
-#include <stdnoreturn.h>
+#include <common.h>
 
 // #define KDEBUG
 
-void noreturn __attribute__((unused)) kernel_main() {
+_noreturn _unused
+void kernel_main() {
     clear_screen();
 
 #ifdef KDEBUG

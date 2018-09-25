@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include <stdbool.h>
+#include <common.h>
 #include <string.h>
 
 #include "../kernel/console.h"

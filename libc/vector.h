@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
+#include <common.h>
 #include <string.h>
 
 typedef struct vc_vector vc_vector;
