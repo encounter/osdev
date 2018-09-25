@@ -55,7 +55,7 @@ static bool key_buffer_append(const char c) {
     if (key_buffer == NULL) {
         key_buffer = malloc(key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
         if (key_buffer == NULL) return false;
-    } else if (key_buffer_size + 1 <= key_buffer_used) {
+    } else if (key_buffer_size <= key_buffer_used + 1) {
         key_buffer = realloc(key_buffer, key_buffer_size += KEY_BUFFER_INITIAL_SIZE);
         if (key_buffer == NULL) return false;
     }
