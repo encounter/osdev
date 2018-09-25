@@ -23,6 +23,7 @@ static shell_callback shell_cb = NULL;
 static char *key_buffer;
 static size_t key_buffer_size;
 static size_t key_buffer_used;
+static size_t key_buffer_printed;
 
 #define ASCII_MAX 58
 const char *sc_name[ASCII_MAX] = {
@@ -66,6 +67,7 @@ static bool key_buffer_append(const char c) {
 
 static void key_buffer_clear() {
     key_buffer[key_buffer_used = 0] = '\0';
+    key_buffer_printed = 0;
 
     // Shrink key_buffer if it expanded
     if (key_buffer_size > KEY_BUFFER_INITIAL_SIZE) {
@@ -82,7 +84,6 @@ static void irq_callback(__attribute__((unused)) registers_t regs) {
     } else if (c == BACKSPACE) {
         if (key_buffer_used > 0) {
             key_buffer[--key_buffer_used] = '\0';
-            kprint_backspace();
         }
     } else if (c == ENTER) {
         if (shell_cb != NULL) shell_cb(key_buffer);
@@ -92,13 +93,9 @@ static void irq_callback(__attribute__((unused)) registers_t regs) {
     if (c > ASCII_MAX) {
         return;
     } else if (!shift_pressed && sc_ascii_lower[c]) {
-        if (key_buffer_append(sc_ascii_lower[c])) {
-            kprint_char(sc_ascii_lower[c]);
-        }
+        key_buffer_append(sc_ascii_lower[c]);
     } else if (sc_ascii[c]) {
-        if (key_buffer_append(sc_ascii[c])) {
-            kprint_char(sc_ascii[c]);
-        }
+        key_buffer_append(sc_ascii[c]);
     } else {
 //        kprint("keypress ");
 //        kprint_uint32(c);
@@ -118,4 +115,14 @@ void key_buffer_set(char *input) {
     key_buffer = realloc(key_buffer, max(key_buffer_used, KEY_BUFFER_INITIAL_SIZE));
     if (key_buffer == NULL) return; // return error of some sort?
     strncpy(key_buffer, input, key_buffer_used);
+}
+
+void key_buffer_print() {
+    while (key_buffer_printed < key_buffer_used) {
+        kprint_char(key_buffer[key_buffer_printed++]);
+    }
+    while (key_buffer_printed > key_buffer_used) {
+        kprint_backspace();
+        key_buffer_printed--;
+    }
 }

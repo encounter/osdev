@@ -5,6 +5,9 @@
 
 #define size_t uint32_t
 
+#define ALIGN(x, a)              __ALIGN_MASK(x,(__typeof__(x))(a)-1)
+#define __ALIGN_MASK(x, mask)    (((x)+(mask))&~(mask))
+
 void *memcpy(void *restrict destination, const void *restrict source, size_t num);
 
 void *memmove(void *destination, const void *source, size_t num);

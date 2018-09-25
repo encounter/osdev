@@ -1,9 +1,11 @@
 #pragma once
 
-#define max(x,y) ( \
-    { __auto_type __x = (x); __auto_type __y = (y); \
-      __x > __y ? __x : __y; })
+#define max(a, b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
 
-#define min(x,y) ( \
-    { __auto_type __x = (x); __auto_type __y = (y); \
-      __x < __y ? __x : __y; })
+#define min(a, b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })

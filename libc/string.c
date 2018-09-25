@@ -3,10 +3,10 @@
 #include <malloc.h>
 #include "../kernel/console.h"
 
-#define ALIGN (sizeof(size_t))
-#define ONES ((size_t) - 1 / UCHAR_MAX)
-#define HIGHS (ONES * (UCHAR_MAX / 2 + 1))
-#define HASZERO(x) (((x) - ONES) & ~(x) & HIGHS)
+#define _ALIGN (sizeof(size_t))
+#define _ONES ((size_t) - 1 / UCHAR_MAX)
+#define _HIGHS (_ONES * (UCHAR_MAX / 2 + 1))
+#define _HASZERO(x) (((x) - _ONES) & ~(x) & _HIGHS)
 
 // One measly byte at a time...
 void *memcpy(void *restrict destination, const void *restrict source, size_t num) {
@@ -59,8 +59,8 @@ int memcmp(const void *const s1, const void *const s2, size_t n) {
 size_t strlen(const char *str) {
     const char *a = str;
     const size_t *w;
-    for (; (uintptr_t) str % ALIGN; str++) if (!*str) return str - a;
-    for (w = (const void *) str; !HASZERO(*w); w++);
+    for (; (uintptr_t) str % _ALIGN; str++) if (!*str) return str - a;
+    for (w = (const void *) str; !_HASZERO(*w); w++);
     for (str = (const void *) w; *str; str++);
     return str - a;
 }

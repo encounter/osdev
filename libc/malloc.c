@@ -2,10 +2,11 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "../kernel/console.h"
+
 // #define MALLOC_DEBUG
 
-extern void kprint(char *message);
-extern void kprint_uint32(uint32_t val);
+void print_chunk_debug(void *ptr, bool recursive) ;
 
 static void *memory_start = (void *) 0x1000000;
 static void *memory_end = (void *) 0x2000000; // obviously don't want to keep this...
@@ -14,11 +15,11 @@ static bool initial_alloc = true;
 struct chunk_header {
     struct chunk_header *next;
     struct chunk_header *prev;
-    bool used;
     size_t size;
-}/* __attribute__((packed))*/;
+    bool used;
+};
 
-_Static_assert(sizeof(struct chunk_header) == 0x10, "chunk_header size is wrong");
+_Static_assert(sizeof(struct chunk_header) % 4 == 0, "chunk_header is misaligned");
 
 static bool try_reclaim(struct chunk_header *start, size_t size) {
     struct chunk_header *current_chunk = start;
@@ -61,12 +62,12 @@ static void *find_unused_chunk(const size_t chunk_size) {
 #ifdef MALLOC_DEBUG
         kprint("new chunk @ start: "); kprint_uint32(chunk_size); kprint("\n");
 #endif
-        struct chunk_header *header = (struct chunk_header *) memory_start;
+        struct chunk_header *header = memory_start;
         memset(header, 0, sizeof(struct chunk_header));
         return memory_start;
     }
 
-    struct chunk_header *header = (struct chunk_header *) memory_start;
+    struct chunk_header *header = memory_start;
     while (true) {
         if (!header->used) {
             if (header->size >= chunk_size) {
@@ -86,18 +87,17 @@ static void *find_unused_chunk(const size_t chunk_size) {
 #ifdef MALLOC_DEBUG
             kprint("alloc new chunk size: "); kprint_uint32(chunk_size); kprint("\n");
 #endif
-            void *next = (void *) header + sizeof(struct chunk_header) + header->size;
+            void *next = (void *) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
             if (next + chunk_size > memory_end) break; // Don't overcommit new chunk
 
-            struct chunk_header *next_header = (struct chunk_header *) next;
-            memset(next_header, 0, sizeof(struct chunk_header));
+            struct chunk_header *next_header = memset(next, 0, sizeof(struct chunk_header));
             header->next = next_header;
             next_header->prev = header;
             return next;
         }
 
         // Find space in between chunks
-        uintptr_t end_of_chunk = (uintptr_t) header + sizeof(struct chunk_header) + header->size;
+        uintptr_t end_of_chunk = (uintptr_t) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
         uintptr_t unused_size = (uintptr_t) header->next - end_of_chunk;
         if (unused_size > chunk_size + sizeof(struct chunk_header)) {
 #ifdef MALLOC_DEBUG
@@ -125,7 +125,7 @@ void *malloc(size_t size) {
         return NULL;
     }
 
-    struct chunk_header *header = (struct chunk_header *) chunk;
+    struct chunk_header *header = chunk;
     header->used = true;
     header->size = size;
     return chunk + sizeof(struct chunk_header);
@@ -133,7 +133,7 @@ void *malloc(size_t size) {
 
 void free(void *ptr) {
     if (ptr == NULL) return;
-    struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
+    struct chunk_header *header = ptr - sizeof(struct chunk_header);
     header->used = false;
 #ifdef MALLOC_DEBUG
     kprint("freeing chunk w/ size "); kprint_uint32(header->size); kprint("\n");
@@ -142,7 +142,7 @@ void free(void *ptr) {
 
 void *realloc(void *ptr, size_t new_size) {
     if (ptr == NULL) return malloc(new_size);
-    struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
+    struct chunk_header *header = ptr - sizeof(struct chunk_header);
     if (header->size >= new_size || try_reclaim(header, new_size)) {
         header->size = new_size;
         return ptr;
@@ -156,7 +156,7 @@ void *realloc(void *ptr, size_t new_size) {
 
 void print_chunk_debug(void *ptr, bool recursive) {
     if (ptr == NULL) ptr = memory_start + sizeof(struct chunk_header);
-    struct chunk_header *header = (struct chunk_header *) (ptr - sizeof(struct chunk_header));
+    struct chunk_header *header = ptr - sizeof(struct chunk_header);
     kprint("chunk @ "); kprint_uint32((uintptr_t) header);
     kprint(" | next: "); kprint_uint32((uintptr_t) header->next);
     kprint(", prev: "); kprint_uint32((uintptr_t) header->prev);

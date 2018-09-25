@@ -11,7 +11,7 @@ if (CMAKE_HOST_APPLE)
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/libc)
-add_library(kernel STATIC
+set(SOURCE_FILES
   console
   descriptor_tables
   gdt.asm
@@ -25,3 +25,7 @@ add_library(kernel STATIC
   drivers/acpi
   tests/tests.h
   tests/vector)
+if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
+  set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan)
+endif ()
+add_library(kernel STATIC ${SOURCE_FILES})

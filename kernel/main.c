@@ -2,6 +2,7 @@
 #include "descriptor_tables.h"
 #include "drivers/timer.h"
 #include "shell.h"
+#include "drivers/keyboard.h"
 
 #include <stdnoreturn.h>
 
@@ -31,5 +32,8 @@ void noreturn __attribute__((unused)) kernel_main() {
     clear_screen();
 #endif
 
-    while (1) __asm__ volatile("hlt");
+    while (1) {
+        __asm__ volatile("hlt");
+        key_buffer_print();
+    }
 }
