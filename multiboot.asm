@@ -1,10 +1,11 @@
 ; Declare constants for the multiboot header.
-MBALIGN  equ  1 << 0            ; align loaded modules on page boundaries
-MEMINFO  equ  1 << 1            ; provide memory map
-FLAGS    equ  MBALIGN | MEMINFO ; this is the Multiboot 'flag' field
-MAGIC    equ  0x1BADB002        ; 'magic number' lets bootloader find the header
-CHECKSUM equ -(MAGIC + FLAGS)   ; checksum of above, to prove we are multiboot
- 
+FMBALIGN  equ  1 << 0            ; align loaded modules on page boundaries
+FMEMINFO  equ  1 << 1            ; provide memory map
+FVIDMODE  equ  1 << 2            ; try to set graphics mode
+FLAGS     equ  FMBALIGN | FMEMINFO | FVIDMODE
+MAGIC     equ  0x1BADB002
+CHECKSUM  equ -(MAGIC + FLAGS)
+
 ; Declare a multiboot header that marks the program as a kernel. These are magic
 ; values that are documented in the multiboot standard. The bootloader will
 ; search for this signature in the first 8 KiB of the kernel file, aligned at a
@@ -12,9 +13,23 @@ CHECKSUM equ -(MAGIC + FLAGS)   ; checksum of above, to prove we are multiboot
 ; forced to be within the first 8 KiB of the kernel file.
 section .multiboot
 align 4
+    ; header
 	dd MAGIC
 	dd FLAGS
 	dd CHECKSUM
+
+	; address tag
+	dd 0   ; header_addr
+	dd 0   ; load_addr
+	dd 0   ; load_end_addr
+	dd 0   ; bss_end_addr
+	dd 0   ; entry_addr
+
+	; graphics tag
+	dd 0   ; mode_type
+	dd 800 ; width
+	dd 600 ; height
+	dd 32  ; depth
  
 ; The multiboot standard does not define the value of the stack pointer register
 ; (esp) and it is up to the kernel to provide a stack. This allocates room for a
@@ -54,6 +69,10 @@ _start:
 	; stack (as it grows downwards on x86 systems). This is necessarily done
 	; in assembly as languages such as C cannot function without a stack.
 	mov esp, stack_top
+
+    ; Save multiboot information
+	push ebx ; multiboot_info
+	push eax ; multiboot_magic
  
 	; This is a good place to initialize crucial processor state before the
 	; high-level kernel is entered. It's best to minimize the early

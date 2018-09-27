@@ -19,10 +19,13 @@ set(SOURCE_FILES
   isr
   main
   shell
+  multiboot
   drivers/ports
   drivers/timer
   drivers/keyboard
   drivers/acpi
+  drivers/serial
+  drivers/vga
   tests/tests.h
   tests/vector)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")

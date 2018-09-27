@@ -1,14 +1,12 @@
-#include <common.h>
-#include <string.h>
-
+#include "malloc.h"
 #include "../kernel/console.h"
+
+#include <string.h>
 
 // #define MALLOC_DEBUG
 
-void print_chunk_debug(void *ptr, bool recursive) ;
-
-static void *memory_start = (void *) 0x1000000;
-static void *memory_end = (void *) 0x2000000; // obviously don't want to keep this...
+static void *memory_start = (void *) 0x1000000; // 1 MiB, start of x86 upper memory
+static void *memory_end   = NULL;
 static bool initial_alloc = true;
 
 struct chunk_header {
@@ -163,4 +161,8 @@ void print_chunk_debug(void *ptr, bool recursive) {
     kprint(", size: "); kprint_uint32((uint32_t) header->size);
     kprint("\n");
     if (recursive && header->next) print_chunk_debug((void *) header->next + sizeof(struct chunk_header), recursive);
+}
+
+void malloc_set_memory_end(void *ptr) {
+    memory_end = ptr;
 }

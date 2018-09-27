@@ -8,3 +8,5 @@ CMakeFiles
 Makefile
 *.cbp
 .idea
+*.iso
+iso/

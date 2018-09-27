@@ -1,7 +1,8 @@
-#include <common.h>
+#include "string.h"
+#include "../kernel/console.h"
+
 #include <limits.h>
 #include <malloc.h>
-#include "../kernel/console.h"
 
 #define _ALIGN (sizeof(size_t))
 #define _ONES ((size_t) - 1 / UCHAR_MAX)

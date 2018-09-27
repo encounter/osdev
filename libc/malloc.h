@@ -1,7 +1,6 @@
 #pragma once
 
 #include <common.h>
-#include <string.h>
 
 void *malloc(size_t size);
 

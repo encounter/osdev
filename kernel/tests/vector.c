@@ -1,8 +1,9 @@
+#include "tests.h"
 #include "../console.h"
-#include "vector.h"
 
 #include <string.h>
 #include <malloc.h>
+#include <vector.h>
 
 #define ASSERT_EQ(expected, actual) if ((expected) != (actual)) { \
                                       kprint("Failed passing line "); kprint_uint32(__LINE__); \

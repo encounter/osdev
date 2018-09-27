@@ -1,8 +1,6 @@
-#include "drivers/ports.h"
 #include "descriptor_tables.h"
+#include "drivers/ports.h"
 #include "isr.h"
-
-#include <string.h>
 
 extern void gdt_flush(gdt_ptr_t *gdt_ptr);
 

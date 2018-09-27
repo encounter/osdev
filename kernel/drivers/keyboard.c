@@ -1,16 +1,11 @@
+#include "keyboard.h"
 #include "ports.h"
 #include "timer.h"
 #include "../console.h"
 #include "../isr.h"
+#include "../shell.h"
 
-#include <common.h>
 #include <string.h>
-#include <malloc.h>
-#include <math.h>
-
-typedef void (*shell_callback)(char *input);
-
-static shell_callback shell_cb = NULL;
 
 #define BACKSPACE 0x0E
 #define ENTER 0x1C
@@ -18,12 +13,8 @@ static shell_callback shell_cb = NULL;
 #define R_SHIFT 0x36
 #define L_SHIFT_RELEASE 0xAA
 #define R_SHIFT_RELEASE 0xB6
-
-#define KEY_BUFFER_INITIAL_SIZE 0x100
-static char *key_buffer;
-static size_t key_buffer_size;
-static size_t key_buffer_used;
-static size_t key_buffer_printed;
+#define ARROW_UP   0x48
+#define ARROW_DOWN 0x50
 
 #define ASCII_MAX 58
 const char *sc_name[ASCII_MAX] = {
@@ -51,30 +42,6 @@ const char sc_ascii_lower[ASCII_MAX] = {
 
 static bool shift_pressed = false;
 
-static bool key_buffer_append(const char c) {
-    if (key_buffer == NULL) {
-        key_buffer = malloc(key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
-        if (key_buffer == NULL) return false;
-    } else if (key_buffer_size <= key_buffer_used + 1) {
-        key_buffer = realloc(key_buffer, key_buffer_size += KEY_BUFFER_INITIAL_SIZE);
-        if (key_buffer == NULL) return false;
-    }
-
-    key_buffer[key_buffer_used++] = c;
-    key_buffer[key_buffer_used] = '\0';
-    return true;
-}
-
-static void key_buffer_clear() {
-    key_buffer[key_buffer_used = 0] = '\0';
-    key_buffer_printed = 0;
-
-    // Shrink key_buffer if it expanded
-    if (key_buffer_size > KEY_BUFFER_INITIAL_SIZE) {
-        key_buffer = realloc(key_buffer, key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
-    }
-}
-
 static void irq_callback(_unused registers_t regs) {
     unsigned char c = port_byte_in(0x60);
     if (c == L_SHIFT || c == R_SHIFT) {
@@ -82,47 +49,29 @@ static void irq_callback(_unused registers_t regs) {
     } else if (c == L_SHIFT_RELEASE || c == R_SHIFT_RELEASE) {
         shift_pressed = false;
     } else if (c == BACKSPACE) {
-        if (key_buffer_used > 0) {
-            key_buffer[--key_buffer_used] = '\0';
-        }
+        key_buffer_backspace();
     } else if (c == ENTER) {
-        if (shell_cb != NULL) shell_cb(key_buffer);
-        key_buffer_clear();
+        key_buffer_return();
+    } else if (c == ARROW_UP) {
+        shell_handle_up();
+    } else if (c == ARROW_DOWN) {
+        shell_handle_down();
     }
 
     if (c > ASCII_MAX) {
-        return;
-    } else if (!shift_pressed && sc_ascii_lower[c]) {
-        key_buffer_append(sc_ascii_lower[c]);
-    } else if (sc_ascii[c]) {
-        key_buffer_append(sc_ascii[c]);
-    } else {
 //        kprint("keypress ");
 //        kprint_uint32(c);
 //        kprint(" @ ");
 //        kprint_uint32(get_tick());
 //        kprint_char('\n');
+        return;
+    } else if (!shift_pressed && sc_ascii_lower[c]) {
+        key_buffer_append(sc_ascii_lower[c]);
+    } else if (sc_ascii[c]) {
+        key_buffer_append(sc_ascii[c]);
     }
 }
 
-void init_keyboard(shell_callback cb) {
+void init_keyboard() {
     register_interrupt_handler(IRQ1, &irq_callback);
-    shell_cb = cb; // Having this shell logic in here is wrong, but...
-}
-
-void key_buffer_set(char *input) {
-    key_buffer_used = strlen(input);
-    key_buffer = realloc(key_buffer, max(key_buffer_used, KEY_BUFFER_INITIAL_SIZE));
-    if (key_buffer == NULL) return; // return error of some sort?
-    strncpy(key_buffer, input, key_buffer_used);
-}
-
-void key_buffer_print() {
-    while (key_buffer_printed < key_buffer_used) {
-        kprint_char(key_buffer[key_buffer_printed++]);
-    }
-    while (key_buffer_printed > key_buffer_used) {
-        kprint_backspace();
-        key_buffer_printed--;
-    }
 }

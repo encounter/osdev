@@ -1,5 +1,4 @@
-#include <common.h>
-
+#include "acpi.h"
 #include "ports.h"
 
 #define KBRD_INTRFC 0x64

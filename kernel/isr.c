@@ -29,7 +29,5 @@ void irq_handler(registers_t regs) {
     port_byte_out(I86_PIC1_REG_COMMAND, I86_PIC_OCW2_MASK_EOI);
 
     isr_t handler = interrupt_handlers[regs.int_no];
-    if (handler) {
-        handler(regs);
-    }
+    if (handler) handler(regs);
 }

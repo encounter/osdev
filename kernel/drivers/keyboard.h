@@ -1,6 +1,6 @@
 #pragma once
 
-void init_keyboard(void (*shell_callback)(char *input));
+void init_keyboard();
 
 void key_buffer_set(char *input);
 

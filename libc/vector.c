@@ -1,10 +1,7 @@
 #include "vector.h"
 
-#include <string.h>
 #include <malloc.h>
-
-extern void kprint(const char *message);
-extern void kprint_uint32(uint32_t val);
+#include <string.h>
 
 #define GROWTH_FACTOR 1.5
 #define DEFAULT_COUNT_OF_ELEMENETS 8
