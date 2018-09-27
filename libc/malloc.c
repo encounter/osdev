@@ -5,8 +5,8 @@
 
 // #define MALLOC_DEBUG
 
-static void *memory_start = (void *) 0x1000000; // 1 MiB, start of x86 upper memory
-static void *memory_end   = NULL;
+void *malloc_memory_start = (void *) 0x1000000; // 1 MiB, start of x86 upper memory
+void *malloc_memory_end   = NULL;
 static bool initial_alloc = true;
 
 struct chunk_header {
@@ -50,7 +50,7 @@ static bool try_reclaim(struct chunk_header *start, size_t size) {
 
 static void *find_unused_chunk(const size_t chunk_size) {
     if (initial_alloc) {
-        if (memory_start + sizeof(struct chunk_header) + chunk_size > memory_end)
+        if (malloc_memory_start + sizeof(struct chunk_header) + chunk_size > malloc_memory_end)
             return NULL;
 
         initial_alloc = false;
@@ -59,12 +59,12 @@ static void *find_unused_chunk(const size_t chunk_size) {
 #ifdef MALLOC_DEBUG
         kprint("new chunk @ start: "); kprint_uint32(chunk_size); kprint("\n");
 #endif
-        struct chunk_header *header = memory_start;
+        struct chunk_header *header = malloc_memory_start;
         memset(header, 0, sizeof(struct chunk_header));
-        return memory_start;
+        return malloc_memory_start;
     }
 
-    struct chunk_header *header = memory_start;
+    struct chunk_header *header = malloc_memory_start;
     while (true) {
         if (!header->used) {
             if (header->size >= chunk_size) {
@@ -85,7 +85,7 @@ static void *find_unused_chunk(const size_t chunk_size) {
             kprint("alloc new chunk size: "); kprint_uint32(chunk_size); kprint("\n");
 #endif
             void *next = (void *) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
-            if (next + chunk_size > memory_end) break; // Don't overcommit new chunk
+            if (next + chunk_size > malloc_memory_end) break; // Don't overcommit new chunk
 
             struct chunk_header *next_header = memset(next, 0, sizeof(struct chunk_header));
             header->next = next_header;
@@ -152,17 +152,33 @@ void *realloc(void *ptr, size_t new_size) {
 }
 
 void print_chunk_debug(void *ptr, bool recursive) {
-    if (ptr == NULL) ptr = memory_start + sizeof(struct chunk_header);
-    struct chunk_header *header = ptr - sizeof(struct chunk_header);
-    kprint("chunk @ "); kprint_uint32((uintptr_t) header);
-    kprint(" | next: "); kprint_uint32((uintptr_t) header->next);
-    kprint(", prev: "); kprint_uint32((uintptr_t) header->prev);
-    kprint(", used: "); kprint_uint32((uint32_t) header->used);
-    kprint(", size: "); kprint_uint32((uint32_t) header->size);
-    kprint("\n");
-    if (recursive && header->next) print_chunk_debug((void *) header->next + sizeof(struct chunk_header), recursive);
-}
+    kprint("memory_start = "); kprint_uint32((uintptr_t) malloc_memory_start);
+    kprint(", end = "); kprint_uint32((uintptr_t) malloc_memory_end);
+    kprint_char('\n');
 
-void malloc_set_memory_end(void *ptr) {
-    memory_end = ptr;
+    uint32_t used = 0;
+    if (ptr == NULL) ptr = malloc_memory_start + sizeof(struct chunk_header);
+    struct chunk_header *header = ptr - sizeof(struct chunk_header);
+    do {
+        kprint("chunk @ "); kprint_uint32((uintptr_t) header);
+        kprint(" | next: "); kprint_uint32((uintptr_t) header->next);
+        kprint(", prev: "); kprint_uint32((uintptr_t) header->prev);
+        kprint(", used: "); kprint_uint32((uint32_t) header->used);
+        kprint(", size: "); kprint_uint32((uint32_t) header->size);
+        kprint_char('\n');
+        if (header->used) {
+            if (header->next != NULL) {
+                used += (uintptr_t) header->next - (uintptr_t) header;
+            } else {
+                used += sizeof(struct chunk_header) + header->size;
+            }
+        }
+        if (recursive && header->next != NULL) header = header->next;
+    } while (header->next != NULL);
+
+    if (recursive) {
+        kprint("used = "); kprint_uint32(used);
+        kprint(", est. free = "); kprint_uint32((uintptr_t) malloc_memory_end - (uintptr_t) malloc_memory_start - used);
+        kprint_char('\n');
+    }
 }

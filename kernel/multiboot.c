@@ -1,8 +1,8 @@
 #include "multiboot.h"
 #include "console.h"
 
-extern void malloc_set_memory_end(void *);
-
+extern void *malloc_memory_start;
+extern void *malloc_memory_end;
 
 struct multiboot_color
 {
@@ -20,10 +20,10 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
     kprint("flags = ");  kprint_uint32(info->flags); kprint_char('\n');
 
     if (CHECK_FLAG(info->flags, MULTIBOOT_INFO_MEMORY)) {
+        malloc_memory_start = (void *) 0x100000;
         // 1 MiB + (info->mem_upper * 1 KiB)
-        void *memory_end = (void *) 0x100000 + (info->mem_upper * 0x400);
-        malloc_set_memory_end(memory_end);
-        kprint("memory_end = "); kprint_uint32((uintptr_t) memory_end);
+        malloc_memory_end = malloc_memory_start + (info->mem_upper * 0x400);
+        kprint("upper_memory_end = "); kprint_uint32((uintptr_t) malloc_memory_end);
         kprint_char('\n');
     } else {
         panic("multiboot: Memory information required");
@@ -91,14 +91,28 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         kprint(", mmap_length = "); kprint_uint32(info->mmap_length);
         kprint_char('\n');
 
+        struct multiboot_mmap_entry *largest_available_entry = NULL;
         for (mmap = (struct multiboot_mmap_entry *) info->mmap_addr;
              (unsigned long) mmap < info->mmap_addr + info->mmap_length;
              mmap = (struct multiboot_mmap_entry *)
                      ((unsigned long) mmap + mmap->size + sizeof(mmap->size))) {
+            if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE &&
+                (largest_available_entry == NULL || mmap->len > largest_available_entry->len)) {
+                largest_available_entry = mmap;
+            }
+
             kprint("  size = "); kprint_uint32(mmap->size);
             kprint(", base_addr = "); kprint_uint64(mmap->addr);
             kprint(", length = "); kprint_uint64(mmap->len);
             kprint(", type = "); kprint_uint32(mmap->type);
+            kprint_char('\n');
+        }
+
+        if (largest_available_entry != NULL) {
+            malloc_memory_start = (void *) (uint32_t) largest_available_entry->addr;
+            malloc_memory_end = malloc_memory_start + largest_available_entry->len;
+            kprint("malloc_memory_start = "); kprint_uint32((uintptr_t) malloc_memory_start);
+            kprint(", end = "); kprint_uint32((uintptr_t) malloc_memory_end);
             kprint_char('\n');
         }
     }
