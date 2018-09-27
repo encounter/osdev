@@ -23,6 +23,7 @@ static size_t shell_history_offset = 0;
 static void shell_callback(char *input) {
     kprint_char('\n');
     unsigned char ret = 1;
+    bool save = true;
     if (strcmp(input, "exit") == 0 ||
         strcmp(input, "poweroff") == 0) {
         port_byte_out(0xf4, 0x00);
@@ -31,7 +32,6 @@ static void shell_callback(char *input) {
         reboot();
     } else if (strcmp(input, "clear") == 0) {
         clear_screen();
-        vc_vector_clear(shell_history);
         kprint("# ");
         return;
     } else if (strncmp(input, "echo ", 5) == 0) {
@@ -43,6 +43,10 @@ static void shell_callback(char *input) {
         ret = 0;
     } else if (strncmp(input, "memdbg ", 7) == 0) {
         print_chunk_debug(input, false);
+        ret = 0;
+    } else if (strcmp(input, "history clear") == 0) {
+        vc_vector_clear(shell_history);
+        save = false;
         ret = 0;
     } else if (strcmp(input, "history") == 0) {
         for (void *i = vc_vector_begin(shell_history);
@@ -62,7 +66,7 @@ static void shell_callback(char *input) {
     kprint_uint32(ret);
     kprint(" # ");
 
-    if (input[0] != '\0') {
+    if (save && input[0] != '\0') {
         char *value = strdup(input);
         vc_vector_push_back(shell_history, &value);
     }
@@ -96,7 +100,7 @@ void shell_read() {
 void shell_handle_up() {
     size_t history_count = vc_vector_count(shell_history);
     if (++shell_history_offset > history_count) {
-        shell_history_offset--;
+        shell_history_offset = history_count;
         return;
     }
 
@@ -105,12 +109,13 @@ void shell_handle_up() {
 
 void shell_handle_down() {
     size_t history_count = vc_vector_count(shell_history);
-    if (--shell_history_offset < 0) {
+    if (shell_history_offset == 0 || --shell_history_offset == 0) {
         shell_history_offset = 0;
+        key_buffer_set("");
         return;
     }
 
-    key_buffer_set(*(char **) vc_vector_at(shell_history, history_count - shell_history_offset - 1));
+    key_buffer_set(*(char **) vc_vector_at(shell_history, history_count - shell_history_offset));
 }
 
 bool key_buffer_append(const char c) {
@@ -136,6 +141,7 @@ void key_buffer_backspace() {
 void key_buffer_clear() {
     key_buffer[key_buffer_used = 0] = '\0';
     key_buffer_printed = 0;
+    shell_history_offset = 0;
 
     // Shrink key_buffer if it expanded
     if (key_buffer_size > KEY_BUFFER_INITIAL_SIZE) {
@@ -144,10 +150,14 @@ void key_buffer_clear() {
 }
 
 void key_buffer_set(char *input) {
+    while (key_buffer_used--) {
+        kprint_backspace();
+    }
     key_buffer_used = strlen(input);
-    key_buffer = realloc(key_buffer, max(key_buffer_used, KEY_BUFFER_INITIAL_SIZE));
+    key_buffer = realloc(key_buffer, max(key_buffer_used + 1, KEY_BUFFER_INITIAL_SIZE));
     if (key_buffer == NULL) return; // return error of some sort?
-    strncpy(key_buffer, input, key_buffer_used);
+    strncpy(key_buffer, input, key_buffer_used + 1);
+    key_buffer_printed = 0;
 }
 
 void key_buffer_print() {
