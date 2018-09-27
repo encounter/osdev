@@ -7,7 +7,7 @@ if (CMAKE_HOST_APPLE AND CMAKE_C_LINK_FLAGS)
 endif ()
 
 set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker.ld")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -std=c11 -Wall -Werror -ffreestanding -fno-pie -nostartfiles -nostdlib")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -std=c11 -Wall -Werror -ffreestanding -fno-pie -nostartfiles -nostdlib -Wno-error=unused-variable")
 set(CMAKE_C_FLAGS_DEBUG "-ggdb -fsanitize=undefined -fstack-protector-strong")
 set(CMAKE_C_FLAGS_RELEASE "-Os")
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-n -Wl,--build-id=none -T ${LINKER_SCRIPT}")

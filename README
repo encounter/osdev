@@ -8,4 +8,4 @@ qemu-system-i386 -cdrom os.iso -device isa-debug-exit,iobase=0xf4,iosize=0x04
 -s
 
 # stdio serial:
--serial mon:stdio
+-serial stdio

@@ -26,6 +26,13 @@ set(SOURCE_FILES
   drivers/acpi
   drivers/serial
   drivers/vga
+  drivers/ahci
+  fatfs/diskio
+  fatfs/ff
+  fatfs/ffconf.h
+  fatfs/ffsystem
+  fatfs/ffunicode
+  fatfs/integer.h
   tests/tests.h
   tests/vector)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
