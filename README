@@ -9,3 +9,6 @@ qemu-system-i386 -cdrom os.iso -device isa-debug-exit,iobase=0xf4,iosize=0x04
 
 # stdio serial:
 -serial stdio
+
+# IDE drive:
+-drive file=fat.img,if=ide
