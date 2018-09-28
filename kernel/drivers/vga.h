@@ -2,7 +2,6 @@
 
 #include "../../libc/common.h"
 
-#define VIDEO_ADDRESS ((volatile uint16_t *) 0xb8000)
 #define MAX_ROWS 25
 #define MAX_COLS 80
 

@@ -23,11 +23,15 @@
 // ----------------------------------------------------------------------------
 
 bool test_vc_vector_create() {
+    kprint("starting vector create\n");
     const size_t size_of_type = sizeof(int);
+    kprint("fetching default\n");
     const size_t default_count_of_elements = vc_vector_get_default_count_of_elements();
 
     // Creating vector with default count of elements
+    kprint("creating vector w/ "); kprint_uint32(size_of_type); kprint_char('\n');
     vc_vector *vector = vc_vector_create(0, size_of_type, NULL);
+    kprint("vector ptr = "); kprint_uint32((uintptr_t) vector); kprint_char('\n');
     ASSERT_NE(NULL, vector);
     ASSERT_EQ(0, vc_vector_count(vector));
     ASSERT_EQ(0, vc_vector_size(vector));
@@ -319,10 +323,12 @@ bool test_vc_vector_with_strfreefunc() {
 }
 
 bool vc_vector_run_tests() {
-    return test_vc_vector_create() &&
+    kprint("from "); kprint_uint32(*(uint32_t *) 0x8000000); kprint_char('\n');
+    kprint("starting vector tests "); kprint_uint32((uintptr_t) test_vc_vector_create); kprint_char('\n');
+    return test_vc_vector_create() /*&&
            test_vc_vector_element_access() &&
            test_vc_vector_iterators() &&
            test_vc_vector_capacity() &&
            test_vc_vector_modifiers() &&
-           test_vc_vector_with_strfreefunc();
+           test_vc_vector_with_strfreefunc()*/;
 }

@@ -12,9 +12,12 @@ _unused
 void isr_handler(registers_t regs) {
     kprint("Received interrupt: ");
     kprint_uint32(regs.int_no);
-    kprint(" @ ");
+    kprint(" (err: ");
+    kprint_uint32(regs.err_code);
+    kprint(") @ ");
     kprint_uint32(regs.eip);
     kprint_char('\n');
+    panic(NULL);
 }
 
 _unused

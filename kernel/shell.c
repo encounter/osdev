@@ -23,7 +23,7 @@ static size_t key_buffer_printed;
 static vc_vector *shell_history;
 static size_t shell_history_offset = 0;
 
-static void command_lspci() {
+void command_lspci() {
     vc_vector *pci_devices = pci_get_devices();
     for (pci_device_t *device = vc_vector_begin(pci_devices);
          device != vc_vector_end(pci_devices);
@@ -84,7 +84,7 @@ static void command_lspci() {
     kprint_char('\n');
 }
 
-static void command_lsata() {
+void command_lsata() {
     for (uint8_t i = 0; i < 4; i++) {
         if (ide_devices[i].reserved == 1) {
             kprint_uint8(i);

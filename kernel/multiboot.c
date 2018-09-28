@@ -1,6 +1,9 @@
 #include "multiboot.h"
 #include "console.h"
 
+#define PAGE_OFFSET 0xC0000000
+#define KERNEL_OFFSET 0x100000 // FIXME
+
 extern void *malloc_memory_start;
 extern void *malloc_memory_end;
 
@@ -16,13 +19,14 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         panic("multiboot_magic: Invalid magic.\n");
     }
 
-    struct multiboot_info *info = (struct multiboot_info *) info_ptr;
-    kprint("flags = ");  kprint_uint32(info->flags); kprint_char('\n');
+    struct multiboot_info *info = (struct multiboot_info *) (info_ptr + PAGE_OFFSET);
+    kprint("multiboot_info = "); kprint_uint32((uintptr_t) info);
+    kprint("\nflags = "); kprint_uint32(info->flags); kprint_char('\n');
 
     if (CHECK_FLAG(info->flags, MULTIBOOT_INFO_MEMORY)) {
-        malloc_memory_start = (void *) 0x100000;
+        malloc_memory_start = (void *) 0x100000 + PAGE_OFFSET + KERNEL_OFFSET;
         // 1 MiB + (info->mem_upper * 1 KiB)
-        malloc_memory_end = malloc_memory_start + (info->mem_upper * 0x400);
+        malloc_memory_end = malloc_memory_start + (info->mem_upper * 0x400) - KERNEL_OFFSET;
         kprint("upper_memory_end = "); kprint_uint32((uintptr_t) malloc_memory_end);
         kprint_char('\n');
     } else {
@@ -35,7 +39,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
     }
 
     if (CHECK_FLAG(info->flags, MULTIBOOT_INFO_CMDLINE)) {
-        kprint("cmdline = "); kprint((char *) info->cmdline);
+        kprint("cmdline = "); kprint((char *) (info->cmdline + PAGE_OFFSET));
         kprint_char('\n');
     }
 
@@ -46,12 +50,12 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         kprint("mods_count = "); kprint_uint32(info->mods_count);
         kprint(", mods_addr = "); kprint_uint32(info->mods_addr);
         kprint_char('\n');
-        for (i = 0, mod = (struct multiboot_mod_list *) info->mods_addr;
+        for (i = 0, mod = (struct multiboot_mod_list *) (info->mods_addr + PAGE_OFFSET);
              i < info->mods_count;
              i++, mod++) {
             kprint("  mod_start = "); kprint_uint32(mod->mod_start);
             kprint(", mod_end = "); kprint_uint32(mod->mod_end);
-            kprint(", cmdline = "); kprint((char *) mod->cmdline);
+            kprint(", cmdline = "); kprint((char *) (mod->cmdline + PAGE_OFFSET));
             kprint_char('\n');
         }
     }
@@ -92,8 +96,8 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         kprint_char('\n');
 
         struct multiboot_mmap_entry *largest_available_entry = NULL;
-        for (mmap = (struct multiboot_mmap_entry *) info->mmap_addr;
-             (unsigned long) mmap < info->mmap_addr + info->mmap_length;
+        for (mmap = (struct multiboot_mmap_entry *) (info->mmap_addr + PAGE_OFFSET);
+             (unsigned long) mmap < info->mmap_addr + PAGE_OFFSET + info->mmap_length;
              mmap = (struct multiboot_mmap_entry *)
                      ((unsigned long) mmap + mmap->size + sizeof(mmap->size))) {
             if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE &&
@@ -109,93 +113,32 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         }
 
         if (largest_available_entry != NULL) {
-            malloc_memory_start = (void *) (uint32_t) largest_available_entry->addr;
-            malloc_memory_end = malloc_memory_start + largest_available_entry->len;
+            // malloc_memory_start = (void *) (uint32_t) largest_available_entry->addr + PAGE_OFFSET + KERNEL_OFFSET;
+            // malloc_memory_end = malloc_memory_start + largest_available_entry->len - KERNEL_OFFSET;
             kprint("malloc_memory_start = "); kprint_uint32((uintptr_t) malloc_memory_start);
             kprint(", end = "); kprint_uint32((uintptr_t) malloc_memory_end);
             kprint_char('\n');
         }
     }
 
-    /* Draw diagonal blue line. */
+    /* Check VGA framebuffer. */
     if (CHECK_FLAG (info->flags, MULTIBOOT_INFO_FRAMEBUFFER_INFO)) {
-        uint32_t color;
-        unsigned i;
-        void *fb = (void *) (unsigned long) info->framebuffer_addr;
-
         kprint("framebuffer addr = "); kprint_uint64(info->framebuffer_addr);
         kprint(", type = "); kprint_uint8(info->framebuffer_type);
         kprint(", bpp = "); kprint_uint8(info->framebuffer_bpp);
         kprint_char('\n');
 
         switch (info->framebuffer_type) {
-            case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED: {
-                unsigned best_distance, distance;
-                struct multiboot_color *palette;
-
-                palette = (struct multiboot_color *) info->framebuffer_palette_addr;
-
-                color = 0;
-                best_distance = 4 * 256 * 256;
-
-                for (i = 0; i < info->framebuffer_palette_num_colors; i++) {
-                    distance = (0xff - palette[i].blue) * (0xff - palette[i].blue)
-                               + palette[i].red * palette[i].red
-                               + palette[i].green * palette[i].green;
-                    if (distance < best_distance) {
-                        color = i;
-                        best_distance = distance;
-                    }
-                }
-            }
-                break;
-
-            case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-                color = ((1 << info->framebuffer_blue_mask_size) - 1)
-                        << info->framebuffer_blue_field_position;
-                break;
-
             case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
                 console_set_vga_enabled(true);
-                color = '\\' | 0x0100;
                 break;
 
             default:
-                color = 0xffffffff;
-                break;
-        }
-
-        for (i = 0; i < info->framebuffer_width
-                    && i < info->framebuffer_height; i++) {
-            switch (info->framebuffer_bpp) {
-                case 8: {
-                    uint8_t *pixel = fb + info->framebuffer_pitch * i + i;
-                    *pixel = (uint8_t) color;
-                }
-                    break;
-                case 15:
-                case 16: {
-                    uint16_t *pixel
-                            = fb + info->framebuffer_pitch * i + 2 * i;
-                    *pixel = (uint16_t) color;
-                }
-                    break;
-                case 24: {
-                    uint32_t *pixel
-                            = fb + info->framebuffer_pitch * i + 3 * i;
-                    *pixel = (color & 0xffffff) | (*pixel & 0xff000000);
-                }
-                    break;
-
-                case 32: {
-                    uint32_t *pixel
-                            = fb + info->framebuffer_pitch * i + 4 * i;
-                    *pixel = color;
-                }
                     break;
             }
-        }
     } else {
         console_set_vga_enabled(true); // FIXME
     }
+
+    kprint("Multiboot info loaded.\n");
 }

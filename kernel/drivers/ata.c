@@ -92,7 +92,6 @@ void ide_read_buffer(uint8_t channel, uint8_t reg, uint32_t *buffer, uint32_t qu
      */
     if (reg > 0x07 && reg < 0x0C)
         ide_write(channel, ATA_REG_CONTROL, (uint8_t) (0x80 | channels[channel].nIEN));
-    __asm__("pushw %es; movw %ds, %ax; movw %ax, %es");
     if (reg < 0x08)
         insl((uint16_t) (channels[channel].base + reg - 0x00), buffer, quads);
     else if (reg < 0x0C)
@@ -101,7 +100,6 @@ void ide_read_buffer(uint8_t channel, uint8_t reg, uint32_t *buffer, uint32_t qu
         insl((uint16_t) (channels[channel].ctrl + reg - 0x0A), buffer, quads);
     else if (reg < 0x16)
         insl((uint16_t) (channels[channel].bm_ide + reg - 0x0E), buffer, quads);
-    __asm__("popw %es;");
     if (reg > 0x07 && reg < 0x0C)
         ide_write(channel, ATA_REG_CONTROL, channels[channel].nIEN);
 }
@@ -401,20 +399,14 @@ uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba,
         for (i = 0; i < numsects; i++) {
             if ((err = ide_polling(channel, 1)))
                 return err; // Polling, set error and exit if there is.
-            __asm__("pushw %es");
-            __asm__("mov %%ax, %%es" : : "a"(selector));
             __asm__("rep insw" : : "c"(words), "d"(bus), "D"(edi)); // Receive Data.
-            __asm__("popw %es");
             edi += (words * 2);
         }
     else {
         // PIO Write.
         for (i = 0; i < numsects; i++) {
             ide_polling(channel, 0); // Polling.
-            __asm__("pushw %ds");
-            __asm__("mov %%ax, %%ds"::"a"(selector));
             __asm__("rep outsw"::"c"(words), "d"(bus), "S"(edi)); // Send Data
-            __asm__("popw %ds");
             edi += (words * 2);
         }
         ide_write(channel, ATA_REG_COMMAND,

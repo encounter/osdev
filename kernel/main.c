@@ -12,6 +12,8 @@
 
 // #define KDEBUG
 
+extern bool vc_vector_run_tests();
+
 _noreturn _unused
 void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     serial_init();
@@ -22,6 +24,7 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     ata_init();
 
     clear_screen();
+    vc_vector_run_tests();
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");
