@@ -7,105 +7,79 @@
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
-#include "diskio.h"		/* FatFs lower layer API */
-
-/* Definitions of physical drive number for each drive */
-#define DEV_HDA		0
-
+#include "diskio.h"        /* FatFs lower layer API */
+#include "../drivers/ata.h"
+#include "../console.h"
 
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_status (
-	BYTE pdrv		/* Physical drive nmuber to identify the drive */
-)
-{
-	DSTATUS stat;
-	int result;
-
-	// TODO
-
-	return STA_NOINIT;
+DSTATUS disk_status(
+        BYTE pdrv        /* Physical drive nmuber to identify the drive */
+) {
+    if (pdrv < 3 && ide_devices[pdrv].reserved) {
+        return 0;
+    }
+    return STA_NODISK;
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
 /*-----------------------------------------------------------------------*/
 
-DSTATUS disk_initialize (
-	BYTE pdrv				/* Physical drive nmuber to identify the drive */
-)
-{
-	DSTATUS stat;
-	int result;
-
-	// TODO
-
-	return STA_NOINIT;
+DSTATUS disk_initialize(
+        BYTE pdrv                /* Physical drive nmuber to identify the drive */
+) {
+    if (pdrv < 3 && ide_devices[pdrv].reserved) {
+        return 0;
+    }
+    return STA_NODISK;
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Read Sector(s)                                                        */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_read (
-	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
-	BYTE *buff,		/* Data buffer to store read data */
-	DWORD sector,	/* Start sector in LBA */
-	UINT count		/* Number of sectors to read */
-)
-{
-	DRESULT res;
-	int result;
-	
-	// TODO
-
-	return RES_PARERR;
+DRESULT disk_read(
+        BYTE pdrv,        /* Physical drive nmuber to identify the drive */
+        BYTE *buff,        /* Data buffer to store read data */
+        DWORD sector,    /* Start sector in LBA */
+        UINT count        /* Number of sectors to read */
+) {
+    if (pdrv < 3 && ide_devices[pdrv].reserved) {
+        if (ide_ata_access(0, pdrv, sector, (uint8_t) count, 0, (uintptr_t) buff)) {
+            return RES_ERROR;
+        }
+        return RES_OK;
+    }
+    return RES_PARERR;
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Write Sector(s)                                                       */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_write (
-	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
-	const BYTE *buff,	/* Data to be written */
-	DWORD sector,		/* Start sector in LBA */
-	UINT count			/* Number of sectors to write */
-)
-{
-	DRESULT res;
-	int result;
-	
-	// TODO
-
-	return RES_PARERR;
+DRESULT disk_write(
+        BYTE pdrv,            /* Physical drive nmuber to identify the drive */
+        const BYTE *buff,    /* Data to be written */
+        DWORD sector,        /* Start sector in LBA */
+        UINT count            /* Number of sectors to write */
+) {
+    // TODO
+    return RES_WRPRT;
 }
-
-
 
 /*-----------------------------------------------------------------------*/
 /* Miscellaneous Functions                                               */
 /*-----------------------------------------------------------------------*/
 
-DRESULT disk_ioctl (
-	BYTE pdrv,		/* Physical drive nmuber (0..) */
-	BYTE cmd,		/* Control code */
-	void *buff		/* Buffer to send/receive control data */
-)
-{
-	DRESULT res;
-	int result;
-	
-	// TODO
-
-	return RES_PARERR;
+DRESULT disk_ioctl(
+        BYTE pdrv,        /* Physical drive nmuber (0..) */
+        BYTE cmd,        /* Control code */
+        void *buff        /* Buffer to send/receive control data */
+) {
+    // TODO
+    return RES_PARERR;
 }
 

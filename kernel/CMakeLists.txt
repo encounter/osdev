@@ -20,6 +20,7 @@ set(SOURCE_FILES
   main
   shell
   multiboot
+  div64
   drivers/ports
   drivers/timer
   drivers/keyboard
@@ -27,6 +28,9 @@ set(SOURCE_FILES
   drivers/serial
   drivers/vga
   drivers/ahci
+  drivers/ata
+  drivers/pci
+  drivers/pci_registry
   fatfs/diskio
   fatfs/ff
   fatfs/ffconf.h
@@ -34,7 +38,8 @@ set(SOURCE_FILES
   fatfs/ffunicode
   fatfs/integer.h
   tests/tests.h
-  tests/vector)
+  tests/vector
+  tests/fatfs)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
   set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan)
 endif ()

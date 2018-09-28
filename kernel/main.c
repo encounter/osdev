@@ -5,6 +5,8 @@
 #include "drivers/keyboard.h"
 #include "multiboot.h"
 #include "drivers/serial.h"
+#include "drivers/pci.h"
+#include "drivers/ata.h"
 
 #include <common.h>
 
@@ -16,6 +18,8 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     console_set_serial_enabled(true);
 
     multiboot_init(multiboot_magic, multiboot_info);
+    pci_init();
+    ata_init();
 
     clear_screen();
 
