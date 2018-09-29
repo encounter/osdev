@@ -27,8 +27,7 @@ boot_page_directory:
 
     ; This page directory entry defines a 4MB page containing the kernel.
     dd 0x00000083
-    dd 0x00000083
-    times (1024 - KERNEL_PAGE_NUMBER - 2) dd 0  ; Pages after the kernel image.
+    times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0  ; Pages after the kernel image.
 
 ; Declare a multiboot header that marks the program as a kernel. These are magic
 ; values that are documented in the multiboot standard. The bootloader will
@@ -99,7 +98,7 @@ _start:
 	; Enable SSE
     mov eax, cr0
     and ax, 0xFFFB  ; clear coprocessor emulation CR0.EM
-    or ax, (1 << 2) ; set coprocessor monitoring  CR0.MP
+    or ax, (1 << 1) ; set coprocessor monitoring  CR0.MP
     mov cr0, eax
     mov eax, cr4
     or ax, (3 << 9) ; set CR4.OSFXSR and CR4.OSXMMEXCPT at the same time

@@ -7,8 +7,10 @@
 #include "drivers/serial.h"
 #include "drivers/pci.h"
 #include "drivers/ata.h"
+#include "fatfs/ff.h"
 
 #include <common.h>
+#include <lzma.h>
 
 // #define KDEBUG
 
@@ -23,8 +25,24 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     pci_init();
     ata_init();
 
+    uint32_t i = UINT32_MAX / 2;
+    while(i--); // stall
+
+    kprint("Mounting drive 0... ");
+    FATFS fs;
+    FRESULT ret = f_mount(&fs, "", 1);
+    if (ret == FR_OK) {
+        kprint("OK\n");
+    } else {
+        kprint("fail\n");
+    }
+
+#ifdef ENABLE_DWARF
+    extern void *dwarf_find_debug_info(FATFS *);
+    dwarf_find_debug_info(&fs);
+#endif
+
     clear_screen();
-    vc_vector_run_tests();
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");

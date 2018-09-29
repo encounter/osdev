@@ -59,24 +59,24 @@ bool pci_check_function(uint32_t id) {
     uint16_t class = pci_read_class(id);
     uint16_t revision = pci_read_revision(id);
     uint8_t header_type = pci_read_header_type(id);
-    // vc_vector_push_back(pci_devices, &(pci_device_t) {
-    //     .loc = {
-    //         .bus = PCI_ID_BUS(id),
-    //         .device = PCI_ID_DEV(id),
-    //         .function = PCI_ID_FUNC(id)
-    //     },
-    //     .class = class,
-    //     .vendor_id = vendor_id,
-    //     .device_id = device_id,
-    //     .revision_id = (uint8_t) (revision & 0xFF),
-    //     .prog_if = (uint8_t) (revision >> 8 & 0xFF),
-    //     .bar0 = pci_config_read_long(id, PCI_HEADER_BAR0_ADDR),
-    //     .bar1 = pci_config_read_long(id, PCI_HEADER_BAR1_ADDR),
-    //     .bar2 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR2_ADDR) : 0,
-    //     .bar3 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR3_ADDR) : 0,
-    //     .bar4 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR4_ADDR) : 0,
-    //     .bar5 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR5_ADDR) : 0,
-    // });
+    vc_vector_push_back(pci_devices, &(pci_device_t) {
+         .loc = {
+             .bus = PCI_ID_BUS(id),
+             .device = PCI_ID_DEV(id),
+             .function = PCI_ID_FUNC(id)
+         },
+         .class = class,
+         .vendor_id = vendor_id,
+         .device_id = device_id,
+         .revision_id = (uint8_t) (revision & 0xFF),
+         .prog_if = (uint8_t) (revision >> 8 & 0xFF),
+         .bar0 = pci_config_read_long(id, PCI_HEADER_BAR0_ADDR),
+         .bar1 = pci_config_read_long(id, PCI_HEADER_BAR1_ADDR),
+         .bar2 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR2_ADDR) : 0,
+         .bar3 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR3_ADDR) : 0,
+         .bar4 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR4_ADDR) : 0,
+         .bar5 = header_type == 0x00 ? pci_config_read_long(id, PCI_HEADER_BAR5_ADDR) : 0,
+     });
 
     // PCI-to-PCI bridge
     if (class == 0x0604) {

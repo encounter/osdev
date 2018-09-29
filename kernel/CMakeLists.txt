@@ -21,6 +21,7 @@ set(SOURCE_FILES
   shell
   multiboot
   div64
+  elf
   drivers/ports
   drivers/timer
   drivers/keyboard
@@ -41,6 +42,6 @@ set(SOURCE_FILES
   tests/vector
   tests/fatfs)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-  set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan)
+  set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan debug/dwarf)
 endif ()
 add_library(kernel STATIC ${SOURCE_FILES})

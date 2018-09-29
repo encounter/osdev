@@ -11,4 +11,4 @@ if (CMAKE_HOST_APPLE)
 endif ()
 
 include_directories(${CMAKE_SOURCE_DIR}/libc)
-add_library(c STATIC string malloc math vector)
+add_library(c STATIC string malloc math vector byteswap)
