@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "isr.h"
 #include "console.h"
 #include "drivers/ports.h"
@@ -10,14 +11,7 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 
 _unused
 void isr_handler(registers_t regs) {
-    kprint("Received interrupt: ");
-    kprint_uint32(regs.int_no);
-    kprint(" (err: ");
-    kprint_uint32(regs.err_code);
-    kprint(") @ ");
-    kprint_uint32(regs.eip);
-    kprint_char('\n');
-    panic(NULL);
+    panic("Received interrupt: %lu (err: %lu) @ %p\n", regs.int_no, regs.err_code, (void *) regs.eip);
 }
 
 _unused

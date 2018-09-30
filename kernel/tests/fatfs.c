@@ -46,7 +46,7 @@ bool fatfs_test() {
     kprint_char('\n');
 
     end:
-    if (buff != NULL) free(buff);
+    free(buff);
     f_close(&file);
     f_unmount("");
     return ret == FR_OK;

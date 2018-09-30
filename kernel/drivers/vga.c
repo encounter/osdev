@@ -30,7 +30,9 @@ int vga_print_char(char c, int col, int row, char attr) {
     if (col >= 0 && row >= 0) offset = vga_get_offset(col, row);
     else offset = vga_get_cursor_offset();
 
-    if (c == '\n') {
+    if (c == '\b') {
+        offset--;
+    } else if (c == '\n') {
         row = vga_get_offset_row(offset);
         offset = vga_get_offset(0, row + 1);
     } else {

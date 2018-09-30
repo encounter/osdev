@@ -1,8 +1,12 @@
-qemu-system-i386 -kernel kernel.bin -device isa-debug-exit,iobase=0xf4,iosize=0x04
+# directly
+qemu-system-i386 -kernel kernel.bin
 
 # via Grub:
 ./mkiso.sh kernel.bin
-qemu-system-i386 -cdrom os.iso -device isa-debug-exit,iobase=0xf4,iosize=0x04
+qemu-system-i386 -cdrom os.iso
+
+# support exit
+-device isa-debug-exit,iobase=0xf4,iosize=0x04
 
 # remote gdb (port 1234):
 -s
@@ -11,4 +15,4 @@ qemu-system-i386 -cdrom os.iso -device isa-debug-exit,iobase=0xf4,iosize=0x04
 -serial stdio
 
 # IDE drive:
--drive file=fat.img,if=ide
+-drive file=hd.img,if=ide

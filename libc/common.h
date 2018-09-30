@@ -10,3 +10,5 @@
 #define _unused   __attribute__((unused))
 #define _packed   __attribute__((packed))
 #endif
+
+#define off_t uint64_t

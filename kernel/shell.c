@@ -13,6 +13,7 @@
 #include <malloc.h>
 #include <vector.h>
 #include <math.h>
+#include <stdio.h>
 
 #define KEY_BUFFER_INITIAL_SIZE 0x100
 static char *key_buffer;
@@ -28,80 +29,34 @@ void command_lspci() {
     for (pci_device_t *device = vc_vector_begin(pci_devices);
          device != vc_vector_end(pci_devices);
          device = vc_vector_next(pci_devices, device)) {
-        kprint_uint8(device->loc.bus);
-        kprint_char(':');
-        kprint_uint8(device->loc.device);
-        kprint_char('.');
-        kprint_uint8(device->loc.function);
-        kprint_char(' ');
-        kprint_uint16(device->class);
-        kprint_char('.');
-        kprint_uint8(device->prog_if);
-        kprint(": ");
-        kprint_uint16(device->vendor_id);
-        kprint_char(':');
-        kprint_uint16(device->device_id);
-        kprint_char(' ');
-        kprint(pci_class_name(device->class, device->revision_id));
-        if (device->revision_id) {
-            kprint(" (rev ");
-            kprint_uint8(device->revision_id);
-            kprint_char(')');
-        }
-        kprint_char('\n');
+        printf("%d:%d.%d %04X.%02X: %04X:%04X | %s",
+               device->loc.bus, device->loc.device, device->loc.function,
+               device->class, device->prog_if, device->vendor_id, device->device_id,
+               pci_class_name(device->class, device->revision_id));
+        if (device->revision_id) printf(" (rev %d)\n", device->revision_id);
+        else printf("\n");
 
-        if (device->bar0) {
-            kprint("  BAR0 = ");
-            kprint_uint32(device->bar0);
-            kprint_char('\n');
-        }
-        if (device->bar1) {
-            kprint("  BAR1 = ");
-            kprint_uint32(device->bar1);
-            kprint_char('\n');
-        }
-        if (device->bar2) {
-            kprint("  BAR2 = ");
-            kprint_uint32(device->bar2);
-            kprint_char('\n');
-        }
-        if (device->bar3) {
-            kprint("  BAR3 = ");
-            kprint_uint32(device->bar3);
-            kprint_char('\n');
-        }
-        if (device->bar4) {
-            kprint("  BAR4 = ");
-            kprint_uint32(device->bar4);
-            kprint_char('\n');
-        }
-        if (device->bar5) {
-            kprint("  BAR5 = ");
-            kprint_uint32(device->bar5);
-            kprint_char('\n');
-        }
+        if (device->bar0) printf("  BAR0 = "PRIXUPTR"\n", device->bar0);
+        if (device->bar1) printf("  BAR1 = "PRIXUPTR"\n", device->bar1);
+        if (device->bar2) printf("  BAR2 = "PRIXUPTR"\n", device->bar2);
+        if (device->bar3) printf("  BAR3 = "PRIXUPTR"\n", device->bar3);
+        if (device->bar4) printf("  BAR4 = "PRIXUPTR"\n", device->bar4);
+        if (device->bar5) printf("  BAR5 = "PRIXUPTR"\n", device->bar5);
     }
-    kprint_char('\n');
 }
 
 void command_lsata() {
     for (uint8_t i = 0; i < 4; i++) {
         if (ide_devices[i].reserved == 1) {
-            kprint_uint8(i);
-            kprint(": ");
-            kprint((const char *[]) {"ATA", "ATAPI"}[ide_devices[i].type]);
-            kprint(" Drive ");
-            kprint_uint32(ide_devices[i].size / 1024 / 1024 / 2);
-            kprint("GB - ");
-            kprint(ide_devices[i].model);
-            kprint_char('\n');
+            const char *type_str = ((const char *[]) {"ATA  ", "ATAPI"}[ide_devices[i].type]);
+            printf("%d: %s | %016lu sectors | %s\n", i, type_str, ide_devices[i].size, ide_devices[i].model);
         }
     }
-    kprint_char('\n');
 }
 
 static void shell_callback(char *input) {
-    kprint_char('\n');
+    printf("\n");
+
     unsigned char ret = 1;
     bool save = true;
     if (strcmp(input, "exit") == 0 ||
@@ -112,11 +67,10 @@ static void shell_callback(char *input) {
         reboot();
     } else if (strcmp(input, "clear") == 0) {
         clear_screen();
-        kprint("# ");
+        printf("# ");
         return;
     } else if (strncmp(input, "echo ", 5) == 0) {
-        kprint(input + 5);
-        kprint_char('\n');
+        printf("%s\n", input + 5);
         ret = 0;
     } else if (strcmp(input, "memdbg") == 0) {
         print_chunk_debug(NULL, true);
@@ -132,8 +86,7 @@ static void shell_callback(char *input) {
         for (char **i = vc_vector_begin(shell_history);
              i != vc_vector_end(shell_history);
              i = vc_vector_next(shell_history, i)) {
-            kprint(*i);
-            kprint_char('\n');
+            printf("%s\n", *i);
         }
         ret = 0;
     } else if (strcmp(input, "test vector") == 0) {
@@ -142,9 +95,7 @@ static void shell_callback(char *input) {
         ret = (unsigned char) !fatfs_test();
     } else if (strcmp(input, "test") == 0 ||
                strncmp(input, "test ", 5) == 0) {
-        kprint("Available tests:\n");
-        kprint("  vector\n");
-        kprint("  fatfs\n");
+        printf("Available tests:\n  vector\n  fatfs\n");
     } else if (strcmp(input, "lspci") == 0) {
         command_lspci();
         ret = 0;
@@ -152,9 +103,8 @@ static void shell_callback(char *input) {
         command_lsata();
         ret = 0;
     }
-    (void) (ret);
-//    kprint_uint32(ret);
-    kprint("# ");
+    printf("%d # ", ret);
+    fflush(stdout);
 
     if (save && input[0] != '\0') {
         char *value = strdup(input);
@@ -169,7 +119,8 @@ static void shell_history_free_func(void *data) {
 void shell_init() {
     shell_history = vc_vector_create(0x100, sizeof(char *), shell_history_free_func);
     init_keyboard();
-    kprint("# ");
+    printf("# ");
+    fflush(stdout);
 }
 
 void shell_read() {
@@ -241,23 +192,26 @@ void key_buffer_clear() {
 
 void key_buffer_set(char *input) {
     while (key_buffer_used--) {
-        kprint_backspace();
+        printf("\b \b");
     }
     key_buffer_used = strlen(input);
-    key_buffer = realloc(key_buffer, max(key_buffer_used + 1, KEY_BUFFER_INITIAL_SIZE));
+    key_buffer = realloc(key_buffer, MAX(key_buffer_used + 1, KEY_BUFFER_INITIAL_SIZE));
     if (key_buffer == NULL) return; // return error of some sort?
     strncpy(key_buffer, input, key_buffer_used + 1);
     key_buffer_printed = 0;
+    key_buffer_print();
 }
 
 void key_buffer_print() {
-    while (key_buffer_printed < key_buffer_used) {
-        kprint_char(key_buffer[key_buffer_printed++]);
+    if (key_buffer_printed < key_buffer_used) {
+        fwrite(key_buffer + key_buffer_printed, key_buffer_used - key_buffer_printed, 1, stdout);
+        key_buffer_printed = key_buffer_used;
     }
     while (key_buffer_printed > key_buffer_used) {
-        kprint_backspace();
+        printf("\b \b");
         key_buffer_printed--;
     }
+    fflush(stdout);
 }
 
 void key_buffer_return() {

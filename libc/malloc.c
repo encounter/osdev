@@ -1,12 +1,13 @@
 #include "malloc.h"
-#include "../kernel/console.h"
+#include "stdio.h"
 
 #include <string.h>
+#include <limits.h>
 
 // #define MALLOC_DEBUG
 
 void *malloc_memory_start = (void *) 0x1000000; // 1 MiB, start of x86 upper memory
-void *malloc_memory_end   = NULL;
+void *malloc_memory_end = NULL;
 static bool initial_alloc = true;
 
 struct chunk_header {
@@ -151,21 +152,59 @@ void *realloc(void *ptr, size_t new_size) {
     return new;
 }
 
+// FIXME move everything below
+
+const char *suffixes[7] = {
+    "",
+    "KB",
+    "MB",
+    "GB",
+    "TB",
+    "PB",
+    "EB"
+};
+
+static unsigned digits(uint32_t n) {
+    static uint32_t powers[10] = {
+            0, 10, 100, 1000, 10000, 100000, 1000000,
+            10000000, 100000000, 1000000000,
+    };
+    static unsigned max_digits[33] = {
+            1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5,
+            5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10,
+    };
+    unsigned bits = sizeof(n) * CHAR_BIT - __builtin_clz(n);
+    unsigned digits = max_digits[bits];
+    if (n < powers[digits - 1]) --digits;
+    return digits;
+}
+
+static char *pretty_bytes(uint64_t bytes) {
+    uint8_t s = 0;
+    uint64_t count = bytes;
+    while (count >= 1024 && s < 7) {
+        s++;
+        count /= 1024;
+    }
+
+    uint32_t len = digits((uint32_t) count) + 2;
+    char *buf = malloc(len + 1);
+    buf[snprintf(buf, len, "%llu%s", count, suffixes[s])] = 0;
+    return buf;
+}
+
 void print_chunk_debug(void *ptr, bool recursive) {
-    kprint("memory_start = "); kprint_uint32((uintptr_t) malloc_memory_start);
-    kprint(", end = "); kprint_uint32((uintptr_t) malloc_memory_end);
-    kprint_char('\n');
+    printf("memory_start = %p, end = %p\n", malloc_memory_start, malloc_memory_end);
 
     uint32_t used = 0;
     if (ptr == NULL) ptr = malloc_memory_start + sizeof(struct chunk_header);
     struct chunk_header *header = ptr - sizeof(struct chunk_header);
     do {
-        kprint("chunk @ "); kprint_uint32((uintptr_t) header);
-        kprint(" | next: "); kprint_uint32((uintptr_t) header->next);
-        kprint(", prev: "); kprint_uint32((uintptr_t) header->prev);
-        kprint(", used: "); kprint_uint32((uint32_t) header->used);
-        kprint(", size: "); kprint_uint32((uint32_t) header->size);
-        kprint_char('\n');
+        char *str_size = pretty_bytes(header->size);
+        printf("chunk @ %p | next: %p, prev: %p, used: %d, size: %s\n",
+               header, header->next, header->prev, header->used, str_size);
+        free(str_size);
+
         if (header->used) {
             if (header->next != NULL) {
                 used += (uintptr_t) header->next - (uintptr_t) header;
@@ -177,8 +216,11 @@ void print_chunk_debug(void *ptr, bool recursive) {
     } while (header->next != NULL);
 
     if (recursive) {
-        kprint("used = "); kprint_uint32(used);
-        kprint(", est. free = "); kprint_uint32((uintptr_t) malloc_memory_end - (uintptr_t) malloc_memory_start - used);
-        kprint_char('\n');
+        uint32_t est_free = (uintptr_t) malloc_memory_end - (uintptr_t) malloc_memory_start - used;
+        char *str_used = pretty_bytes(used);
+        char *str_free = pretty_bytes(est_free);
+        printf("used = %s, est. free = %s\n", str_used, str_free);
+        free(str_used);
+        free(str_free);
     }
 }

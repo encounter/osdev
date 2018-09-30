@@ -1,7 +1,8 @@
 #include "elf.h"
 #include "console.h"
 
-#include <byteswap.h>
+#include <string.h>
+#include <stdio.h>
 
 #define ELF_DEBUG
 
@@ -68,12 +69,50 @@ elf_section_header_t *elf_find_section(elf_header_t *header,
                                        elf_section_header_t *sht_start,
                                        elf_section_header_type_t type) {
     uint16_t num_entries = header->section_header_num_entries;
-    kprint("starting scan @ "); kprint_uint32((uintptr_t) sht_start); kprint_char('\n');
     for (uint16_t i = 0; i < num_entries; ++i) {
         elf_section_header_t *section_header = (void *) sht_start + header->section_header_entry_size * i;
-        kprint("scanning sect @ "); kprint_uint32((uintptr_t) section_header);
-        kprint(", type "); kprint_uint32(section_header->type); kprint_char('\n');
         if (section_header->type == type) return section_header;
     }
     return NULL;
+}
+
+elf_section_header_t *elf_get_section(elf_header_t *header,
+                                      elf_section_header_t *sht_start,
+                                      uint16_t index) {
+    uint16_t num_entries = header->section_header_num_entries;
+    if (index > num_entries - 1) return NULL;
+    return (void *) sht_start + header->section_header_entry_size * index;
+}
+
+static const char* elf_section_type(elf_section_header_type_t type) {
+    switch (type) {
+        case ELF_SHT_NULL: return "SHT_NULL";
+        case ELF_SHT_PROGBITS: return "SHT_PROGBITS";
+        case ELF_SHT_SYMTAB: return "SHT_SYMTAB";
+        case ELF_SHT_STRTAB: return "SHT_STRTAB";
+        case ELF_SHT_RELA: return "SHT_RELA";
+        case ELF_SHT_HASH: return "SHT_HASH";
+        case ELF_SHT_DYNAMIC: return "SHT_DYNAMIC";
+        case ELF_SHT_NOTE: return "SHT_NOTE";
+        case ELF_SHT_NOBITS: return "SHT_NOBITS";
+        case ELF_SHT_REL: return "SHT_REL";
+        case ELF_SHT_SHLIB: return "SHT_SHLIB";
+        case ELF_SHT_DYNSYM: return "SHT_DYNSYM";
+        case ELF_SHT_LOPROC: return "SHT_LOPROC";
+        case ELF_SHT_HIPROC: return "SHT_HIPROC";
+        case ELF_SHT_LOUSER: return "SHT_LOUSER";
+        case ELF_SHT_HIUSER: return "SHT_HIUSER";
+        default: return "UNKNOWN";
+    }
+}
+
+void elf_print_sections(elf_header_t *header, elf_section_header_t *sht_start, void *shstrtab_ptr) {
+    uint16_t num_entries = header->section_header_num_entries;
+    for (uint16_t i = 0; i < num_entries; ++i) {
+        elf_section_header_t *section_header = (void *) sht_start + header->section_header_entry_size * i;
+        if (section_header->type == ELF_SHT_NULL) continue; // Skip null header
+        printf("Section %d %s: offset "PRIx32", size "PRIx32", type %s\n",
+                i, (char *) shstrtab_ptr + section_header->name, section_header->offset,
+                section_header->size, elf_section_type(section_header->type));
+    }
 }

@@ -2,6 +2,9 @@
 #include "drivers/vga.h"
 #include "drivers/serial.h"
 
+#include <stdio.h>
+#include <string.h>
+
 static bool vga_enabled = false;
 static bool serial_enabled = false;
 
@@ -25,27 +28,28 @@ void console_set_serial_enabled(bool enabled) {
  * Print a message on the specified location
  * If col, row, are negative, we will use the current offset
  */
-
-void kprint(const char *message) {
+static void knprint(const char *str, size_t len, uint8_t vga_color) {
     if (vga_enabled) {
         int offset = vga_get_cursor_offset();
         int row = vga_get_offset_row(offset);
         int col = vga_get_offset_col(offset);
 
-        int i = 0;
-        while (message[i] != 0) {
-            offset = vga_print_char(message[i++], col, row, vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
+        for (size_t i = 0; i < len; ++i) {
+            offset = vga_print_char(str[i], col, row, vga_color);
             row = vga_get_offset_row(offset);
             col = vga_get_offset_col(offset);
         }
     }
 
     if (serial_enabled) {
-        int i = 0;
-        while (message[i] != 0) {
-            serial_write(message[i++]);
+        for (size_t i = 0; i < len; ++i) {
+            serial_write(str[i]);
         }
     }
+}
+
+void kprint(const char *message) {
+    knprint(message, strlen(message), WHITE_ON_BLACK);
 }
 
 void kprint_char(char c) {
@@ -56,20 +60,6 @@ void kprint_char(char c) {
 
     if (serial_enabled) {
         serial_write(c);
-    }
-}
-
-void kprint_backspace() {
-    if (vga_enabled) {
-        int offset = vga_get_cursor_offset() - 1;
-        vga_print_char(' ', vga_get_offset_col(offset), vga_get_offset_row(offset), WHITE_ON_BLACK);
-        vga_set_cursor_offset(offset);
-    }
-
-    if (serial_enabled) {
-        serial_write(0x8);
-        serial_write(' ');
-        serial_write(0x8);
     }
 }
 
@@ -135,8 +125,13 @@ void kprint_uint8(uint8_t val) {
 }
 
 _noreturn
-void panic(char *str) {
-    if (str != NULL) kprint(str);
+void panic(char *str, ...) {
+    va_list args;
+    va_start(args, str);
+    if (str != NULL) vfprintf(stderr, str, args);
+    va_end(args);
+    fflush(stderr);
+
     __asm__("cli");
     while (1) __asm__("hlt");
 }
@@ -148,9 +143,70 @@ void panic(char *str) {
 #endif
 
 _unused
-        uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
+uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 
 _noreturn _unused
 void __stack_chk_fail() {
     panic("Stack smashing detected");
 }
+
+// --- stdio
+
+int errno;
+
+size_t __stdout_write(FILE *f, const char *str, size_t len) {
+    size_t rem = f->wpos - f->wbase;
+    if (rem) knprint(f->wbase, rem, WHITE_ON_BLACK);
+    if (len) knprint(str, len, WHITE_ON_BLACK);
+
+    f->wend = f->buf + f->buf_size;
+    f->wpos = f->wbase = f->buf;
+    return len;
+}
+
+size_t __stderr_write(FILE *f, const char *str, size_t len) {
+    size_t rem = f->wpos - f->wbase;
+    if (rem) knprint(f->wbase, rem, RED_ON_WHITE);
+    if (len) knprint(str, len, RED_ON_WHITE);
+
+    f->wend = f->buf + f->buf_size;
+    f->wpos = f->wbase = f->buf;
+    return len;
+}
+
+off_t __stdio_seek(FILE *file, const off_t offset, int origin) {
+    return 0; // TODO
+}
+
+int __stdio_close(FILE *file) {
+    return 0; // TODO
+}
+
+#define BUFSIZ 1024
+#define UNGET 8
+
+static char __stdout_buf[BUFSIZ + UNGET];
+FILE *stdout = &(FILE) {
+        .buf = __stdout_buf + UNGET,
+        .buf_size = BUFSIZ,
+        .fd = 1,
+        .flags = F_PERM | F_NORD,
+        .lbf = '\n',
+        .write = __stdout_write,
+        .seek = __stdio_seek,
+        .close = __stdio_close,
+        .lock = -1,
+};
+
+static char __stderr_buf[BUFSIZ + UNGET];
+FILE *stderr = &(FILE) {
+        .buf = __stderr_buf + UNGET,
+        .buf_size = BUFSIZ,
+        .fd = 1,
+        .flags = F_PERM | F_NORD,
+        .lbf = '\n',
+        .write = __stderr_write,
+        .seek = __stdio_seek,
+        .close = __stdio_close,
+        .lock = -1,
+};

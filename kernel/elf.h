@@ -1,6 +1,7 @@
 #pragma once
 
 #include <common.h>
+#include <stdio.h>
 
 #define ELF_HEADER_MAGIC_LE ((uint32_t) 0x7F | 'E' << 8 | 'L' << 16 | 'F' << 24)
 
@@ -42,14 +43,29 @@ typedef enum elf_machine_type elf_machine_type_t;
 _Static_assert(sizeof(elf_machine_type_t) == sizeof(uint16_t),
                "elf_machine_type incorrect size");
 
+enum elf_obj_type {
+    ELF_ET_NONE = 0,
+    ELF_ET_REL = 1,
+    ELF_ET_EXEC = 2,
+    ELF_ET_DYN = 3,
+    ELF_ET_CORE = 4,
+    ELF_ET_LOPROC = 0xFF00,
+    ELF_ET_HIPROC = 0xFFFF
+};
+typedef enum elf_obj_type elf_obj_type_t;
+
+_Static_assert(sizeof(elf_obj_type_t) == sizeof(uint16_t),
+               "elf_obj_type incorrect size");
+
 struct _packed elf_header {
     uint32_t magic;
     elf_header_arch_bits_t arch_bits;
     elf_header_endianness_t endianness;
     uint8_t elf_version;
     uint8_t __padding[9];
-    uint16_t elf_type; // 1 = relocatable, 2 = executable, 3 = shared, 4 = core
+    elf_obj_type_t obj_type;
     elf_machine_type_t machine_type;
+    uint32_t version; // ?????
     uint32_t program_entry_offset;
     uint32_t program_header_offset;
     uint32_t section_header_offset;
@@ -63,7 +79,7 @@ struct _packed elf_header {
 };
 typedef struct elf_header elf_header_t;
 
-_Static_assert(sizeof(elf_header_t) == 48,
+_Static_assert(sizeof(elf_header_t) == 52,
                "elf_header incorrect size");
 
 enum elf_section_header_type {
@@ -103,6 +119,13 @@ struct _packed elf_section_header {
 };
 typedef struct elf_section_header elf_section_header_t;
 
+struct elf_file {
+    FILE fd;
+    elf_header_t *header;
+    elf_section_header_t *sht_start;
+};
+typedef struct elf_file elf_file_t;
+
 //_Static_assert(sizeof(elf_section_header_t) == 32,
 //               "elf_section_header incorrect size");
 
@@ -113,3 +136,9 @@ elf_header_t *read_elf_header(void *ptr);
 elf_section_header_t *elf_find_section(elf_header_t *header,
                                        elf_section_header_t *sht_start,
                                        elf_section_header_type_t type);
+
+elf_section_header_t *elf_get_section(elf_header_t *header,
+                                      elf_section_header_t *sht_start,
+                                      uint16_t index);
+
+void elf_print_sections(elf_header_t *header, elf_section_header_t *sht_start, void *shstrtab_ptr);

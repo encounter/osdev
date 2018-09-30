@@ -32,6 +32,7 @@ set(SOURCE_FILES
   drivers/ata
   drivers/pci
   drivers/pci_registry
+#  drivers/i825xx
   fatfs/diskio
   fatfs/ff
   fatfs/ffconf.h

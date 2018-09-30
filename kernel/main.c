@@ -10,7 +10,7 @@
 #include "fatfs/ff.h"
 
 #include <common.h>
-#include <lzma.h>
+#include <stdio.h>
 
 // #define KDEBUG
 
@@ -25,16 +25,16 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     pci_init();
     ata_init();
 
-    uint32_t i = UINT32_MAX / 2;
+    uint32_t i = UINT32_MAX / 16;
     while(i--); // stall
 
-    kprint("Mounting drive 0... ");
+    printf("Mounting drive 0... ");
     FATFS fs;
     FRESULT ret = f_mount(&fs, "", 1);
     if (ret == FR_OK) {
-        kprint("OK\n");
+        printf("OK\n");
     } else {
-        kprint("fail\n");
+        printf("fail %d\n", ret);
     }
 
 #ifdef ENABLE_DWARF
@@ -42,7 +42,7 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     dwarf_find_debug_info(&fs);
 #endif
 
-    clear_screen();
+//    clear_screen();
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");
