@@ -11,4 +11,4 @@
 #define _packed   __attribute__((packed))
 #endif
 
-#define off_t uint64_t
+#define off_t int64_t

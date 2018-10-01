@@ -28,3 +28,5 @@ char *strcpy(char *destination, const char *source);
 char *strncpy(char *restrict s1, const char *restrict s2, size_t n);
 
 char *strdup(char *str);
+
+char *strchr(const char *s, int c);

@@ -182,9 +182,6 @@ int __stdio_close(FILE *file) {
     return 0; // TODO
 }
 
-#define BUFSIZ 1024
-#define UNGET 8
-
 static char __stdout_buf[BUFSIZ + UNGET];
 FILE *stdout = &(FILE) {
         .buf = __stdout_buf + UNGET,

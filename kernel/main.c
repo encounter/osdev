@@ -38,8 +38,8 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     }
 
 #ifdef ENABLE_DWARF
-    extern void *dwarf_find_debug_info(FATFS *);
-    dwarf_find_debug_info(&fs);
+    extern void *dwarf_find_debug_info();
+    dwarf_find_debug_info();
 #endif
 
 //    clear_screen();

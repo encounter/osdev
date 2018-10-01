@@ -1,5 +1,8 @@
 #include "stdio.h"
 #include "string.h"
+#include "errno.h"
+
+#include <limits.h>
 
 int __towrite(FILE *f) {
     f->mode |= f->mode - 1;
@@ -67,6 +70,20 @@ int fflush(FILE *f) {
     return 0;
 }
 
-FILE *fopen(const char *filename, const char *mode) {
-
+long ftell(FILE *f) {
+    off_t pos = f->seek(f, 0,
+                        (f->flags & F_APP) && f->wpos != f->wbase
+                        ? SEEK_END : SEEK_CUR);
+    if (pos >= 0) {
+        /* Adjust for data in buffer. */
+        if (f->rend)
+            pos += f->rpos - f->rend;
+        else if (f->wbase)
+            pos += f->wpos - f->wbase;
+    }
+    if (pos > LONG_MAX) {
+        errno = EOVERFLOW;
+        return -1;
+    }
+    return (long) pos;
 }

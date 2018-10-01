@@ -11,5 +11,6 @@ if (CMAKE_HOST_APPLE)
 endif ()
 
 include_directories(${CMAKE_SOURCE_DIR}/libc)
-add_library(c STATIC string malloc math vector byteswap ctype.h errno wchar stdio.c stdio.h
-        stdio/printf stdio/fprintf stdio/snprintf stdio/vfprintf stdio/vsnprintf)
+add_library(c STATIC string malloc math vector byteswap ctype errno wchar stdio.c stdio.h
+        stdio/printf stdio/fprintf stdio/sprintf stdio/snprintf stdio/vfprintf stdio/vsprintf
+        stdio/vsnprintf)

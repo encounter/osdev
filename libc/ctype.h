@@ -27,3 +27,5 @@ static __inline int __isspace(int _c)
 #define isprint(a) (0 ? isprint(a) : ((unsigned)(a)-0x20) < 0x5f)
 #define isgraph(a) (0 ? isgraph(a) : ((unsigned)(a)-0x21) < 0x5e)
 #define isspace(a) __isspace(a)
+
+int atoi(const char *s);

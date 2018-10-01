@@ -17,7 +17,9 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
-
+// _IO_FILE definitions
+#define BUFSIZ 1024
+#define UNGET 8
 
 // Unsigned numbers
 #define PRIu32    "%lu"
@@ -81,22 +83,42 @@ int __towrite(FILE *f);
 
 size_t __fwritex(const char *restrict s, size_t l, FILE *restrict f);
 
-// ---
 
-size_t fwrite(const void *restrict src, size_t size, size_t nmemb, FILE *restrict f);
+// --- File
+
+size_t fread(void *restrict dest, size_t size, size_t count, FILE *restrict f);
+
+size_t fwrite(const void *restrict src, size_t size, size_t count, FILE *restrict f);
 
 int fflush(FILE *f);
 
 FILE *fopen(const char *filename, const char *mode);
 
-int fstat(int fd, struct stat *st);
+int fclose(FILE *f);
+
+// int fstat(int fd, struct stat *st); FIXME once fds are implemented
+int fstat(const char *filename, struct stat *st);
+
+int fseek(FILE *f, off_t off, int origin);
+
+long ftell(FILE *f);
+
+#define ferror(f) (f == NULL || !!(f->flags & F_ERR))
+
+#define feof(f) (!!(f->flags & F_EOF))
+
+// --- Print
 
 int printf(const char *restrict fmt, ...);
 
 int fprintf(FILE *restrict f, const char *restrict fmt, ...);
 
+int sprintf(char *restrict s, const char *restrict fmt, ...);
+
 int snprintf(char *restrict s, size_t n, const char *restrict fmt, ...);
 
 int vfprintf(FILE *restrict f, const char *restrict fmt, va_list ap);
+
+int vsprintf(char *restrict s, const char *restrict fmt, va_list ap);
 
 int vsnprintf(char *restrict s, size_t n, const char *restrict fmt, va_list ap);

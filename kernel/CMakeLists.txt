@@ -22,6 +22,7 @@ set(SOURCE_FILES
   multiboot
   div64
   elf
+  stdio_impl
   drivers/ports
   drivers/timer
   drivers/keyboard

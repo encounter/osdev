@@ -1,10 +1,10 @@
 #include <stdio.h>
 
-int fprintf(FILE *restrict f, const char *restrict fmt, ...) {
+int sprintf(char *restrict s, const char *restrict fmt, ...) {
     int ret;
     va_list ap;
     va_start(ap, fmt);
-    ret = vfprintf(f, fmt, ap);
+    ret = vsprintf(s, fmt, ap);
     va_end(ap);
     return ret;
 }

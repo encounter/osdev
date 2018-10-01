@@ -120,9 +120,10 @@ struct _packed elf_section_header {
 typedef struct elf_section_header elf_section_header_t;
 
 struct elf_file {
-    FILE fd;
+    FILE *fd;
     elf_header_t *header;
     elf_section_header_t *sht_start;
+    char *sht_str_section;
 };
 typedef struct elf_file elf_file_t;
 
@@ -131,14 +132,12 @@ typedef struct elf_file elf_file_t;
 
 // --- Public
 
-elf_header_t *read_elf_header(void *ptr);
+elf_section_header_t *elf_find_section(elf_file_t *file, elf_section_header_type_t type);
 
-elf_section_header_t *elf_find_section(elf_header_t *header,
-                                       elf_section_header_t *sht_start,
-                                       elf_section_header_type_t type);
+elf_section_header_t *elf_get_section(elf_file_t *file, uint16_t index);
 
-elf_section_header_t *elf_get_section(elf_header_t *header,
-                                      elf_section_header_t *sht_start,
-                                      uint16_t index);
+void elf_print_sections(elf_file_t *file);
 
-void elf_print_sections(elf_header_t *header, elf_section_header_t *sht_start, void *shstrtab_ptr);
+bool elf_open(elf_file_t *file, const char *filename);
+
+void elf_close(elf_file_t *file);

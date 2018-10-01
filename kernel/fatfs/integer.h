@@ -31,7 +31,7 @@ typedef int32_t		LONG;
 typedef uint32_t	DWORD;
 
 /* This type MUST be 64-bit (Remove this for ANSI C (C89) compatibility) */
-typedef unsigned long long QWORD;
+typedef uint64_t QWORD;
 
 #endif
 

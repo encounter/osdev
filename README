@@ -15,4 +15,4 @@ qemu-system-i386 -cdrom os.iso
 -serial stdio
 
 # IDE drive:
--drive file=hd.img,if=ide
+-drive file=hd.img,if=ide,format=raw
