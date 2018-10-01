@@ -9,7 +9,8 @@
 
 #include "diskio.h"        /* FatFs lower layer API */
 #include "../drivers/ata.h"
-#include "../console.h"
+
+#include <stdio.h>
 
 /*-----------------------------------------------------------------------*/
 /* Get Drive Status                                                      */
@@ -66,7 +67,12 @@ DRESULT disk_write(
         DWORD sector,        /* Start sector in LBA */
         UINT count            /* Number of sectors to write */
 ) {
-    // TODO
+    if (pdrv < 3 && ide_devices[pdrv].reserved) {
+        if (ide_ata_access(1, pdrv, sector, (uint8_t) count, 0, (uintptr_t) buff)) {
+            return RES_ERROR;
+        }
+        return RES_OK;
+    }
     return RES_WRPRT;
 }
 
@@ -80,6 +86,7 @@ DRESULT disk_ioctl(
         void *buff        /* Buffer to send/receive control data */
 ) {
     // TODO
-    return RES_PARERR;
+    // printf("called unimplemented function disk_ioctl\n");
+    return RES_OK;
 }
 

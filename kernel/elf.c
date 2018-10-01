@@ -6,13 +6,10 @@
 #include <errno.h>
 #include <malloc.h>
 
-#define ELF_DEBUG
+// #define ELF_DEBUG
 
 bool _check_elf_header(elf_header_t *header) {
     if (header->magic == ELF_HEADER_MAGIC_LE) {
-        kprint("Got success magic ");
-        kprint_uint32(header->magic);
-        kprint_char('\n');
         if (header->arch_bits != ELF_ARCH_BITS_32) {
 #ifdef ELF_DEBUG
             kprint("read_elf_header: incorrect arch_bits = ");
@@ -57,11 +54,7 @@ bool _check_elf_header(elf_header_t *header) {
         }
         return true;
     } else {
-        kprint("Got bad magic ");
-        kprint_uint32(header->magic);
-        kprint(" != ");
-        kprint_uint32(ELF_HEADER_MAGIC_LE);
-        kprint_char('\n');
+        printf("_check_elf_header: Got bad magic %04lu != %04lu\n", header->magic, ELF_HEADER_MAGIC_LE);
         return false;
     }
 }
@@ -225,7 +218,7 @@ bool elf_open(elf_file_t *file, const char *filename) {
 
 void elf_close(elf_file_t *file) {
     if (file == NULL) return;
-    fclose(file->fd);
+    if (file->fd != NULL) fclose(file->fd);
     free(file->header);
     free(file->sht_start);
     free(file->sht_str_section);

@@ -57,10 +57,11 @@ FILE *__fatfs_open(FILE *f, const char *filename, const char *m) {
     }
 
     uint8_t mode = FA_READ | FA_WRITE;
-    if (f->flags & F_NOWR) mode &= ~FA_WRITE;
+    if (strcmp("w+", m) == 0) mode |= FA_CREATE_ALWAYS;
+    else if (f->flags & F_NOWR) mode &= ~FA_WRITE;
+    else if (strcmp("r+", m) != 0) mode |= FA_CREATE_NEW;
     if (f->flags & F_NORD) mode &= ~FA_READ;
     if (f->flags & F_APP) mode |= FA_OPEN_APPEND;
-    // TODO FA_CREATE_ALWAYS, FA_OPEN_ALWAYS?
 
     ret = f_open(f->cookie, filename, mode);
     if (ret != FR_OK) {
@@ -226,24 +227,6 @@ size_t fread(void *restrict destv, size_t size, size_t nmemb, FILE *restrict f) 
     }
 
     return nmemb;
-}
-
-int fclose(FILE *f) {
-    int r;
-    int perm;
-
-    if (!(perm = f->flags & F_PERM)) {
-        if (f->prev) f->prev->next = f->next;
-        if (f->next) f->next->prev = f->prev;
-    }
-
-    r = fflush(f);
-    r |= f->close(f);
-
-    // free(f->getln_buf); FIXME not implemented
-    if (!perm) free(f);
-
-    return r;
 }
 
 int fstat(const char *filename, struct stat *st) {

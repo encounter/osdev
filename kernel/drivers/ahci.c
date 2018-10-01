@@ -1,8 +1,8 @@
 #include "ahci.h"
-#include "../console.h"
 
 #include <stdarg.h>
 #include <string.h>
+#include <stdio.h>
 
 #define	AHCI_BASE	0x400000	// 4M
 
@@ -190,10 +190,12 @@ typedef struct tagHBA_CMD_TBL
 	HBA_PRDT_ENTRY	prdt_entry[1];	// Physical region descriptor table entries, 0 ~ 65535
 } HBA_CMD_TBL;
 
-static void trace_ahci(char *str, ...) { // FIXME
-    kprint("AHCI: ");
-    kprint(str);
-    kprint_char('\n');
+static void trace_ahci(char *str, ...) {
+    printf("AHCI: ");
+    va_list args;
+    va_start(args, str);
+    vprintf(str, args);
+    va_end(args);
 }
 
 // Check device type

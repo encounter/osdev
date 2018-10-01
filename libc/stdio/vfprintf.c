@@ -422,6 +422,7 @@ static int getint(char **s) {
 	return i;
 }
 
+__attribute__((no_sanitize("shift"))) // FIXME weird shifts
 static int printf_core(FILE *f, const char *fmt, va_list *ap, union arg *nl_arg, int *nl_type)
 {
 	char *a, *z, *s=(char *)fmt;

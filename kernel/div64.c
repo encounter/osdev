@@ -98,15 +98,14 @@ static uint64_t _64bit_divide(uint64_t dividend, uint64_t divider, uint64_t *rem
     return result;
 }
 
-uint64_t __udivdi3(uint64_t num, uint64_t den)
-{
+_unused
+uint64_t __udivdi3(uint64_t num, uint64_t den) {
     return _64bit_divide(num, den, NULL);
 }
 
-uint64_t __umoddi3(uint64_t num, uint64_t den)
-{
+_unused
+uint64_t __umoddi3(uint64_t num, uint64_t den) {
     uint64_t v = 0;
-
     _64bit_divide(num, den, &v);
     return v;
 }

@@ -22,11 +22,13 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     console_set_serial_enabled(true);
 
     multiboot_init(multiboot_magic, multiboot_info);
+    bool vga_enabled = console_vga_enabled();
+    console_set_vga_enabled(false);
     pci_init();
     ata_init();
 
-    uint32_t i = UINT32_MAX / 16;
-    while(i--); // stall
+    // uint32_t i = UINT32_MAX / 16;
+    // while(i--); // stall
 
     printf("Mounting drive 0... ");
     FATFS fs;
@@ -42,7 +44,8 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     dwarf_find_debug_info();
 #endif
 
-//    clear_screen();
+    console_set_vga_enabled(vga_enabled);
+    clear_screen();
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");

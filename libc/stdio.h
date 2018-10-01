@@ -111,6 +111,8 @@ long ftell(FILE *f);
 
 int printf(const char *restrict fmt, ...);
 
+int vprintf(const char *restrict fmt, va_list ap);
+
 int fprintf(FILE *restrict f, const char *restrict fmt, ...);
 
 int sprintf(char *restrict s, const char *restrict fmt, ...);

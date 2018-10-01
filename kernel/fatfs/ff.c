@@ -195,9 +195,10 @@
 #define PTE_StLba			8		/* MBR PTE: Start in LBA */
 #define PTE_SizLba			12		/* MBR PTE: Size in LBA */
 
+int ff_abrt_line;
 
 /* Post process on fatal error in the file operations */
-#define ABORT(fs, res)		{ fp->err = (BYTE)(res); LEAVE_FF(fs, res); }
+#define ABORT(fs, res)		{ fp->err = (BYTE)(res); ff_abrt_line = __LINE__; LEAVE_FF(fs, res); }
 
 
 /* Re-entrancy related */

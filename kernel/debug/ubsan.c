@@ -18,6 +18,7 @@
  */
 
 #include <common.h>
+#include <stdio.h>
 
 #include "../console.h"
 
@@ -44,20 +45,19 @@ static const struct ubsan_source_location unknown_location =
                 0,
         };
 
+static char panic_msg_tmp[512];
+static char panic_msg[256];
+
 _noreturn
 static void ubsan_abort(const struct ubsan_source_location* location,
                         const char* violation)
 {
     if ( !location || !location->filename )
         location = &unknown_location;
-    kprint(violation);
-    kprint(" @ ");
-    kprint(location->filename);
-    kprint_char(':');
-    kprint_uint32(location->line);
-    kprint_char(':');
-    kprint_uint32(location->column);
-    panic(NULL);
+    snprintf(panic_msg_tmp, sizeof(panic_msg_tmp), "%s @ %s:%lu:%lu\n",
+             violation, location->filename, location->line, location->column);
+    // FIXME avoiding stdio file due to bugs
+    panic(panic_msg_tmp);
 }
 
 #define ABORT_VARIANT(name, params, call) \
@@ -97,7 +97,8 @@ void __ubsan_handle_type_mismatch_v1(void* data_raw,
         violation = "null pointer access";
     else if ( data->alignment && (pointer & (data->alignment - 1)) )
         violation = "unaligned access";
-    ubsan_abort(&data->location, violation);
+    snprintf(panic_msg, sizeof(panic_msg), "%s %P align %d", violation, pointer, data->alignment);
+    ubsan_abort(&data->location, panic_msg);
 }
 
 ABORT_VARIANT_VP_VP(type_mismatch_v1);
@@ -407,3 +408,16 @@ void __ubsan_handle_pointer_overflow(void *data_raw,
 
 ABORT_VARIANT_VP_VP_VP(pointer_overflow);
 
+struct ubsan_invalid_builtin_data {
+    struct ubsan_source_location location;
+    unsigned char kind;
+};
+
+_unused
+void __ubsan_handle_invalid_builtin(void *data_raw) {
+    struct ubsan_invalid_builtin_data* data =
+            (struct ubsan_invalid_builtin_data*) data_raw;
+    ubsan_abort(&data->location, "invalid builtin");
+}
+
+ABORT_VARIANT_VP(invalid_builtin);

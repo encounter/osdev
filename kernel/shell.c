@@ -93,6 +93,8 @@ static void shell_callback(char *input) {
         ret = (unsigned char) !vc_vector_run_tests();
     } else if (strcmp(input, "test fatfs") == 0) {
         ret = (unsigned char) !fatfs_test();
+    } else if (strcmp(input, "test stdio") == 0) {
+        ret = (unsigned char) !stdio_test();
     } else if (strcmp(input, "test") == 0 ||
                strncmp(input, "test ", 5) == 0) {
         printf("Available tests:\n  vector\n  fatfs\n");

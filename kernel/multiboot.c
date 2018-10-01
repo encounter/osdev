@@ -13,7 +13,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         panic("multiboot_magic: Invalid magic "PRIX32"\n", magic);
     }
 
-    struct multiboot_info *info = (struct multiboot_info *) (info_ptr + PAGE_OFFSET);
+    struct multiboot_info *info = (struct multiboot_info *) ((uintptr_t) info_ptr + PAGE_OFFSET);
     printf("multiboot_info = "PRIXPTR", flags = "PRIx32"\n", info, info->flags);
 
     if (CHECK_FLAG(info->flags, MULTIBOOT_INFO_MEMORY)) {
@@ -95,6 +95,4 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
     } else {
         console_set_vga_enabled(true); // FIXME
     }
-
-    printf("Multiboot info loaded.\n");
 }

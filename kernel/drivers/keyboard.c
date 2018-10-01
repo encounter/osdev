@@ -59,11 +59,6 @@ static void irq_callback(_unused registers_t regs) {
     }
 
     if (c > ASCII_MAX) {
-//        kprint("keypress ");
-//        kprint_uint32(c);
-//        kprint(" @ ");
-//        kprint_uint32(get_tick());
-//        kprint_char('\n');
         return;
     } else if (!shift_pressed && sc_ascii_lower[c]) {
         key_buffer_append(sc_ascii_lower[c]);

@@ -51,7 +51,7 @@ static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
 }
 
 static inline int vga_get_offset(int col, int row) {
-    return vga_handle_scrolling(row * MAX_COLS + col);
+    return row * MAX_COLS + col;
 }
 
 static inline int vga_get_offset_row(int offset) {

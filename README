@@ -1,3 +1,5 @@
+cmake -DCMAKE_BUILD_TYPE=Debug .
+
 # directly
 qemu-system-i386 -kernel kernel.bin
 
@@ -16,3 +18,10 @@ qemu-system-i386 -cdrom os.iso
 
 # IDE drive:
 -drive file=hd.img,if=ide,format=raw
+
+# -----------------
+# Full example:
+make && ./mkiso.sh kernel.bin && ./mkhd.sh kernel.bin && \
+qemu-system-i386 -cdrom os.iso -serial stdio \
+-device isa-debug-exit,iobase=0xf4,iosize=0x04 \
+-drive file=hd.img,if=ide,format=raw -boot d

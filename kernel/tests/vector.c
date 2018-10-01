@@ -1,20 +1,19 @@
 #include "tests.h"
-#include "../console.h"
 
 #include <string.h>
+#include <stdio.h>
 #include <malloc.h>
 #include <vector.h>
 
 #define ASSERT_EQ(expected, actual) if ((expected) != (actual)) { \
-                                      kprint("Failed passing line "); kprint_uint32(__LINE__); \
-                                      kprint(". Expected: "); kprint_uint32((uint32_t) expected); \
-                                      kprint(". Actual: "); kprint_uint32((uint32_t) actual); \
+                                      printf("Failed passing line %d. Expected: %lu. Actual: %lu\n", \
+                                             __LINE__, (uint32_t) expected, (uint32_t) actual); \
                                       return false; \
                                     }
 
 #define ASSERT_NE(not_expected, actual) if ((not_expected) == (actual)) { \
-                                          kprint("Failed passing line "); kprint_uint32(__LINE__); \
-                                          kprint(". Non expected actual value: "); kprint_uint32((uint32_t) actual); \
+                                          printf("Failed passing line %d. Non expected actual value: %lu\n", \
+                                                 __LINE__, (uint32_t) actual); \
                                           return false; \
                                         }
 
@@ -63,8 +62,7 @@ bool test_vc_vector_create() {
     vc_vector_release(vector_copy);
     vc_vector_release(vector);
 
-    kprint(__PRETTY_FUNCTION__);
-    kprint(" passed.\n");
+    printf("%s passed.\n", __PRETTY_FUNCTION__);
     return true;
 }
 
@@ -89,8 +87,7 @@ bool test_vc_vector_element_access() {
 
     vc_vector_release(vector);
 
-    kprint(__PRETTY_FUNCTION__);
-    kprint(" passed.\n");
+    printf("%s passed.\n", __PRETTY_FUNCTION__);
     return true;
 }
 
@@ -111,8 +108,7 @@ bool test_vc_vector_iterators() {
     ASSERT_EQ(test_count_of_elements, j);
     vc_vector_release(vector);
 
-    kprint(__PRETTY_FUNCTION__);
-    kprint(" passed.\n");
+    printf("%s passed.\n", __PRETTY_FUNCTION__);
     return true;
 }
 
@@ -167,8 +163,7 @@ bool test_vc_vector_capacity() {
 
     vc_vector_release(vector);
 
-    kprint(__PRETTY_FUNCTION__);
-    kprint(" passed.\n");
+    printf("%s passed.\n", __PRETTY_FUNCTION__);
     return true;
 }
 
@@ -265,8 +260,7 @@ bool test_vc_vector_modifiers() {
 
     vc_vector_release(vector);
 
-    kprint(__PRETTY_FUNCTION__);
-    kprint(" passed.\n");
+    printf("%s passed.\n", __PRETTY_FUNCTION__);
     return true;
 }
 
@@ -313,8 +307,7 @@ bool test_vc_vector_with_strfreefunc() {
 
     vc_vector_release(vector);
 
-    kprint(__PRETTY_FUNCTION__);
-    kprint(" passed.\n");
+    printf("%s passed.\n", __PRETTY_FUNCTION__);
     return true;
 }
 

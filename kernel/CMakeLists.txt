@@ -42,7 +42,8 @@ set(SOURCE_FILES
   fatfs/integer.h
   tests/tests.h
   tests/vector
-  tests/fatfs)
+  tests/fatfs
+  tests/stdio)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
   set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan debug/dwarf)
 endif ()

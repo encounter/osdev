@@ -1,8 +1,8 @@
-#include "stdio.h"
-#include "string.h"
-#include "errno.h"
-
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
 #include <limits.h>
+#include <malloc.h>
 
 int __towrite(FILE *f) {
     f->mode |= f->mode - 1;
@@ -68,6 +68,24 @@ int fflush(FILE *f) {
     f->rpos = f->rend = 0;
 
     return 0;
+}
+
+int fclose(FILE *f) {
+    int r;
+    int perm;
+
+    if (!(perm = f->flags & F_PERM)) {
+        if (f->prev) f->prev->next = f->next;
+        if (f->next) f->next->prev = f->prev;
+    }
+
+    r = fflush(f);
+    r |= f->close(f);
+
+    // free(f->getln_buf); FIXME not implemented
+    if (!perm) free(f);
+
+    return r;
 }
 
 long ftell(FILE *f) {

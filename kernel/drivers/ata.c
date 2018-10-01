@@ -1,9 +1,10 @@
-#include <malloc.h>
 #include "ata.h"
 #include "pci.h"
 #include "pci_registry.h"
-#include "../console.h"
 #include "ports.h"
+
+#include <malloc.h>
+#include <stdio.h>
 
 struct ide_channel_registers {
     uint16_t base;  // I/O Base.
@@ -33,7 +34,7 @@ void ata_init() {
         }
     }
     if (ide_device == NULL) {
-        kprint("ATA: No IDE controller found.\n");
+        printf("ATA: No IDE controller found.\n");
         return;
     }
 
@@ -41,10 +42,10 @@ void ata_init() {
     uint32_t ide_device_id = PCI_DEVICE_ID(ide_device);
     pci_config_write_byte(ide_device_id, PCI_HEADER_IRQ_LINE, 0xFE);
     if (pci_config_read_byte(ide_device_id, PCI_HEADER_IRQ_LINE) == 0xFE) {
-        kprint("ATA: Initializing IDE controller.\n");
+        printf("ATA: Initializing IDE controller.\n");
         ide_initialize(ide_device->bar0, ide_device->bar1, ide_device->bar2, ide_device->bar3, ide_device->bar4);
     } else if (ide_device->class == 0x0101 && (ide_device->prog_if == 0x8A || ide_device->prog_if == 0x80)) {
-        kprint("ATA: Initializing Parallel IDE controller.\n");
+        printf("ATA: Initializing Parallel IDE controller.\n");
         ide_initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
     }
 }
@@ -81,6 +82,7 @@ uint8_t ide_read(uint8_t channel, uint8_t reg) {
     return result;
 }
 
+__attribute__((no_sanitize("alignment"))) // FIXME
 static inline void insl(uint16_t port, uint32_t *buffer, uint32_t quads) {
     while (--quads) *buffer++ = port_long_in(port);
 }
@@ -144,61 +146,58 @@ uint8_t ide_print_error(uint32_t drive, uint8_t err) {
     if (err == 0)
         return err;
 
-    kprint("IDE:");
+    printf("IDE:");
     if (err == 1) {
-        kprint("- Device Fault\n     ");
+        printf("- Device Fault\n     ");
         err = 19;
     } else if (err == 2) {
         uint8_t st = ide_read(ide_devices[drive].channel, ATA_REG_ERROR);
         if (st & ATA_ER_AMNF) {
-            kprint("- No Address Mark Found\n     ");
+            printf("- No Address Mark Found\n     ");
             err = 7;
         }
         if (st & ATA_ER_TK0NF) {
-            kprint("- No Media or Media Error\n     ");
+            printf("- No Media or Media Error\n     ");
             err = 3;
         }
         if (st & ATA_ER_ABRT) {
-            kprint("- Command Aborted\n     ");
+            printf("- Command Aborted\n     ");
             err = 20;
         }
         if (st & ATA_ER_MCR) {
-            kprint("- No Media or Media Error\n     ");
+            printf("- No Media or Media Error\n     ");
             err = 3;
         }
         if (st & ATA_ER_IDNF) {
-            kprint("- ID mark not Found\n     ");
+            printf("- ID mark not Found\n     ");
             err = 21;
         }
         if (st & ATA_ER_MC) {
-            kprint("- No Media or Media Error\n     ");
+            printf("- No Media or Media Error\n     ");
             err = 3;
         }
         if (st & ATA_ER_UNC) {
-            kprint("- Uncorrectable Data Error\n     ");
+            printf("- Uncorrectable Data Error\n     ");
             err = 22;
         }
         if (st & ATA_ER_BBK) {
-            kprint("- Bad Sectors\n     ");
+            printf("- Bad Sectors\n     ");
             err = 13;
         }
     } else if (err == 3) {
-        kprint("- Reads Nothing\n     ");
+        printf("- Reads Nothing\n     ");
         err = 23;
     } else if (err == 4) {
-        kprint("- Write Protected\n     ");
+        printf("- Write Protected\n     ");
         err = 8;
     }
-    kprint("- [");
-    kprint((const char *[]) {"Primary", "Secondary"}[ide_devices[drive].channel]);
-    kprint_char(' ');
-    kprint((const char *[]) {"Master", "Slave"}[ide_devices[drive].drive]);
-    kprint("] ");
-    kprint(ide_devices[drive].model);
-    kprint_char('\n');
+    const char *ps = (const char *[]) {"Primary", "Secondary"}[ide_devices[drive].channel];
+    const char *ms = (const char *[]) {"Master", "Slave"}[ide_devices[drive].drive];
+    printf("- [%s %s] %s\n", ps, ms, ide_devices[drive].model);
     return err;
 }
 
+__attribute__((no_sanitize("alignment"))) // FIXME
 void ide_initialize(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, uint32_t bar4) {
     uint8_t i, j, k, count = 0;
 
@@ -384,7 +383,7 @@ uint8_t ide_ata_access(uint8_t direction, uint8_t drive, uint32_t lba,
     else if (lba_mode == 1 && dma == 1 && direction == 1) cmd = ATA_CMD_WRITE_DMA;
     else if (lba_mode == 2 && dma == 1 && direction == 1) cmd = ATA_CMD_WRITE_DMA_EXT;
     else {
-        kprint("ide_ata_access: ???");
+        printf("ide_ata_access: ???\n");
         return 1;
     }
     ide_write(channel, ATA_REG_COMMAND, cmd);               // Send the Command.

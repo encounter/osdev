@@ -5,3 +5,5 @@
 bool vc_vector_run_tests();
 
 bool fatfs_test();
+
+bool stdio_test();

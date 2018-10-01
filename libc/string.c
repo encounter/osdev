@@ -58,6 +58,7 @@ int memcmp(const void *const s1, const void *const s2, size_t n) {
     return 0;
 }
 
+__attribute__((no_sanitize("alignment")))
 void *memchr(const void *src, int c, size_t n) {
     const unsigned char *s = src;
     c = (unsigned char) c;
@@ -129,6 +130,7 @@ char *strdup(char *str) {
     return memcpy(new, str, len);
 }
 
+__attribute__((no_sanitize("alignment")))
 char *__strchrnul(const char *s, int c) {
     c = (unsigned char) c;
     if (!c) return (char *) s + strlen(s);

@@ -7,15 +7,18 @@ if (CMAKE_HOST_APPLE AND CMAKE_C_LINK_FLAGS)
 endif ()
 
 set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/linker.ld")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -std=c11 -Wall -Werror -ffreestanding -fno-pie -nostartfiles -nostdlib -Wno-error=unused-variable -fshort-enums")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -std=c11 -ffreestanding -fno-pie -fshort-enums -Wall -Werror -Wno-error=unused-variable")
+# if clang: -Wno-error=unused-command-line-argument -nobuiltininc
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -nostdinc -fno-builtin -nostdlib -nodefaultlibs -fsanitize=undefined")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector") # FIXME generates bad code using `mov eax, large gs:14h`?
 set(CMAKE_C_FLAGS_DEBUG "-gdwarf-4 -DENABLE_DWARF")
 set(CMAKE_C_FLAGS_RELEASE "-Os")
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,-n -Wl,--build-id=none -T ${LINKER_SCRIPT}")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,-n -Wl,--build-id=none -Wl,-T${LINKER_SCRIPT}")
 
 add_subdirectory(kernel)
 add_subdirectory(libc)
 
+# set(CMAKE_C_COMPILER clang)
 if (CMAKE_HOST_APPLE)
     set(CMAKE_C_COMPILER i386-elf-gcc)
 endif ()

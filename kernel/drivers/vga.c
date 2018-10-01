@@ -1,6 +1,7 @@
 #include "vga.h"
 #include "ports.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #define VIDEO_ADDRESS ((uint16_t *) 0xC00B8000)
@@ -38,7 +39,7 @@ int vga_print_char(char c, int col, int row, char attr) {
     } else {
         VIDEO_ADDRESS[offset++] = (uint16_t) (attr << 8 | c);
     }
-    vga_set_cursor_offset(offset);
+    vga_set_cursor_offset(offset = vga_handle_scrolling(offset));
     return offset;
 }
 

@@ -2,6 +2,7 @@
 #include "drivers/vga.h"
 #include "drivers/serial.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -48,90 +49,23 @@ static void knprint(const char *str, size_t len, uint8_t vga_color) {
     }
 }
 
-void kprint(const char *message) {
-    knprint(message, strlen(message), WHITE_ON_BLACK);
-}
-
-void kprint_char(char c) {
-    if (vga_enabled) {
-        int offset = vga_get_cursor_offset();
-        vga_print_char(c, vga_get_offset_col(offset), vga_get_offset_row(offset), WHITE_ON_BLACK);
-    }
-
-    if (serial_enabled) {
-        serial_write(c);
-    }
-}
-
 void clear_screen() {
     if (vga_enabled) {
         vga_clear_screen();
     }
 }
 
-// FIXME get rid of evil macros
-#define to_hex(c) ((char) ((c) > 9 ? (c) + 0x37 : (c) + 0x30))
-#define phexchar(shr) c = val >> (shr) & 0xF; if (c || i > 2 || !shr) hextemp[i++] = to_hex(c)
-char hextemp[14] = {'0', 'x'};
-
-void kprint_uint64(uint64_t val) {
-    uint8_t i = 2, c;
-    phexchar(44);
-    phexchar(40);
-    phexchar(36);
-    phexchar(32);
-    phexchar(28);
-    phexchar(24);
-    phexchar(20);
-    phexchar(16);
-    phexchar(12);
-    phexchar(8);
-    phexchar(4);
-    phexchar(0);
-    hextemp[i] = 0;
-    kprint(hextemp);
-}
-
-void kprint_uint32(uint32_t val) {
-    uint8_t i = 2, c;
-    phexchar(28);
-    phexchar(24);
-    phexchar(20);
-    phexchar(16);
-    phexchar(12);
-    phexchar(8);
-    phexchar(4);
-    phexchar(0);
-    hextemp[i] = 0;
-    kprint(hextemp);
-}
-
-void kprint_uint16(uint16_t val) {
-    uint8_t i = 2, c;
-    phexchar(12);
-    phexchar(8);
-    phexchar(4);
-    phexchar(0);
-    hextemp[i] = 0;
-    kprint(hextemp);
-}
-
-void kprint_uint8(uint8_t val) {
-    uint8_t i = 2, c;
-    phexchar(4);
-    phexchar(0);
-    hextemp[i] = 0;
-    kprint(hextemp);
-}
-
 _noreturn
 void panic(char *str, ...) {
+    vga_enabled = false;
+
     va_list args;
     va_start(args, str);
     if (str != NULL) vfprintf(stderr, str, args);
     va_end(args);
     fflush(stderr);
 
+    // Spin lock
     __asm__("cli");
     while (1) __asm__("hlt");
 }
