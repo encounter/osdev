@@ -1,4 +1,7 @@
-cmake -DCMAKE_BUILD_TYPE=Debug .
+mkdir build && cd build
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+cd ..
+make -C build
 
 # directly
 qemu-system-i386 -kernel kernel.bin
@@ -21,7 +24,7 @@ qemu-system-i386 -cdrom os.iso
 
 # -----------------
 # Full example:
-make && ./mkiso.sh kernel.bin && ./mkhd.sh kernel.bin && \
+make -C build && ./mkiso.sh build/kernel.bin && ./mkhd.sh build/kernel.bin && \
 qemu-system-i386 -cdrom os.iso -serial stdio \
 -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
 -drive file=hd.img,if=ide,format=raw -boot d

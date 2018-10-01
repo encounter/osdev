@@ -1,4 +1,4 @@
-.vscode
+.vscode/
 *.a
 *.bin
 *.img
@@ -7,7 +7,9 @@ cmake_install.cmake
 CMakeFiles
 Makefile
 *.cbp
-.idea
+.idea/
 *.iso
 iso/
 target/
+build/
+/*.png

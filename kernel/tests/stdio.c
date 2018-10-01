@@ -103,7 +103,7 @@ static bool fwrite_test() {
 }
 
 bool stdio_test() {
-    return fstat_test() && 
-           fread_test() && 
+    return fstat_test() &&
+           fread_test() &&
            fwrite_test();
 }
