@@ -21,16 +21,8 @@ void *dwarf_find_debug_info() {
     if (!elf_open(&elf_file, "kernel.bin")) goto fail;
     elf_print_sections(&elf_file);
 
-    // elf_section_header_t *debug_line_section = NULL;
-    // for (uint16_t i = 0; i < elf_file.header->section_header_num_entries; ++i) {
-    //     elf_section_header_t *section_header = elf_file.sht_start + elf_file.header->section_header_entry_size * i;
-    //     char *name = elf_file.sht_str_section + section_header->name;
-    //     if (strcmp(name, ".debug_line") == 0) {
-    //         debug_line_section = section_header;
-    //         break;
-    //     }
-    // }
-    // if (debug_line_section == NULL || debug_line_section->size > UINT16_MAX) goto fail;
+    elf_section_header_t *debug_line_section = elf_find_section(&elf_file, ".debug_line");
+    if (debug_line_section == NULL || debug_line_section->size > UINT16_MAX) goto fail;
 
 //    ret = f_lseek(&file, debug_line_section->offset);
 //    if (ret != FR_OK) goto fail;

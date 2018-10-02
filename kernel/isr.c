@@ -11,11 +11,14 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 
 _unused
 void isr_handler(registers_t regs) {
-    panic("Received interrupt: %lu (err: %lu) @ %P\n", regs.int_no, regs.err_code, (uintptr_t) regs.eip);
+    panic("Received interrupt: %lu (err: %Xh) @ %P\n", regs.int_no, regs.err_code, (uintptr_t) regs.eip);
 }
 
 _unused
 void irq_handler(registers_t regs) {
+    isr_t handler = interrupt_handlers[regs.int_no];
+    if (handler) handler(regs);
+
     // Send an EOI (end of interrupt) signal to the PICs.
     // If this interrupt involved the slave.
     if (regs.int_no >= IRQ8) {
@@ -24,7 +27,4 @@ void irq_handler(registers_t regs) {
     }
     // Send reset signal to master. (As well as slave, if necessary).
     port_byte_out(I86_PIC1_REG_COMMAND, I86_PIC_OCW2_MASK_EOI);
-
-    isr_t handler = interrupt_handlers[regs.int_no];
-    if (handler) handler(regs);
 }

@@ -39,7 +39,7 @@ static bool fread_test() {
     if (ferror(file) || !read) FAIL();
 
     printf("Checking file contents...\n");
-    if (strncmp(buff, "cmake", 5) != 0) FAIL();
+    if (strncmp(buff, "mkdir", 5) != 0) FAIL();
 
     printf("fread_test: passed.\n");
     goto end;
@@ -64,7 +64,7 @@ static bool fwrite_test() {
     void *wbuff = NULL;
 
     if (fstat(filename, &st) || !st.st_size) FAIL();
-    printf("Opening %s for updating... %d\n", filename, st.st_size);
+    printf("Opening %s for updating... %lli\n", filename, st.st_size);
     file = fopen(filename, "r+");
     if (ferror(file)) FAIL();
 
@@ -75,7 +75,7 @@ static bool fwrite_test() {
     if (fclose(file)) FAIL();
 
     if (fstat(filename, &st) || !st.st_size) FAIL();
-    printf("Re-open %s for updating... %d\n", filename, st.st_size);
+    printf("Re-open %s for updating... %lli\n", filename, st.st_size);
     file = fopen(filename, "r+");
     if (ferror(file)) FAIL();
     if ((wbuff = malloc(sizeof(test_str))) == NULL) FAIL();

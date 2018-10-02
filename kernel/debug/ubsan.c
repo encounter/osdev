@@ -54,7 +54,7 @@ static void ubsan_abort(const struct ubsan_source_location* location,
 {
     if ( !location || !location->filename )
         location = &unknown_location;
-    snprintf(panic_msg_tmp, sizeof(panic_msg_tmp), "%s @ %s:%lu:%lu\n",
+    snprintf(panic_msg_tmp, sizeof(panic_msg_tmp), "%s @ %s:%u:%u\n",
              violation, location->filename, location->line, location->column);
     // FIXME avoiding stdio file due to bugs
     panic(panic_msg_tmp);

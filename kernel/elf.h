@@ -11,8 +11,8 @@ enum elf_header_arch_bits {
 };
 typedef enum elf_header_arch_bits elf_header_arch_bits_t;
 
-_Static_assert(sizeof(elf_header_arch_bits_t) == sizeof(uint8_t),
-               "elf_header_arch_bits too large");
+static_assert(sizeof(elf_header_arch_bits_t) == sizeof(uint8_t),
+              "elf_header_arch_bits too large");
 
 enum elf_header_endianness {
     ELF_ENDIANNESS_LITTLE = 1,
@@ -20,8 +20,8 @@ enum elf_header_endianness {
 };
 typedef enum elf_header_endianness elf_header_endianness_t;
 
-_Static_assert(sizeof(elf_header_endianness_t) == sizeof(uint8_t),
-               "elf_header_endianness too large");
+static_assert(sizeof(elf_header_endianness_t) == sizeof(uint8_t),
+              "elf_header_endianness too large");
 
 enum elf_machine_type {
     ELF_IS_NONE = 0,
@@ -40,8 +40,8 @@ enum elf_machine_type {
 };
 typedef enum elf_machine_type elf_machine_type_t;
 
-_Static_assert(sizeof(elf_machine_type_t) == sizeof(uint16_t),
-               "elf_machine_type incorrect size");
+static_assert(sizeof(elf_machine_type_t) == sizeof(uint16_t),
+              "elf_machine_type incorrect size");
 
 enum elf_obj_type {
     ELF_ET_NONE = 0,
@@ -54,8 +54,8 @@ enum elf_obj_type {
 };
 typedef enum elf_obj_type elf_obj_type_t;
 
-_Static_assert(sizeof(elf_obj_type_t) == sizeof(uint16_t),
-               "elf_obj_type incorrect size");
+static_assert(sizeof(elf_obj_type_t) == sizeof(uint16_t),
+              "elf_obj_type incorrect size");
 
 struct _packed elf_header {
     uint32_t magic;
@@ -79,8 +79,8 @@ struct _packed elf_header {
 };
 typedef struct elf_header elf_header_t;
 
-_Static_assert(sizeof(elf_header_t) == 52,
-               "elf_header incorrect size");
+static_assert(sizeof(elf_header_t) == 52,
+              "elf_header incorrect size");
 
 enum elf_section_header_type {
     ELF_SHT_NULL = 0,
@@ -102,8 +102,8 @@ enum elf_section_header_type {
 };
 typedef enum elf_section_header_type elf_section_header_type_t;
 
-_Static_assert(sizeof(elf_section_header_type_t) == sizeof(uint32_t),
-               "elf_section_header_type incorrect size");
+static_assert(sizeof(elf_section_header_type_t) == sizeof(uint32_t),
+              "elf_section_header_type incorrect size");
 
 struct _packed elf_section_header {
     uint32_t name; // name offset in string section
@@ -119,6 +119,9 @@ struct _packed elf_section_header {
 };
 typedef struct elf_section_header elf_section_header_t;
 
+//static_assert(sizeof(elf_section_header_t) == 32,
+//              "elf_section_header incorrect size");
+
 struct elf_file {
     FILE *fd;
     elf_header_t *header;
@@ -127,14 +130,13 @@ struct elf_file {
 };
 typedef struct elf_file elf_file_t;
 
-//_Static_assert(sizeof(elf_section_header_t) == 32,
-//               "elf_section_header incorrect size");
-
 // --- Public
 
-elf_section_header_t *elf_find_section(elf_file_t *file, elf_section_header_type_t type);
+elf_section_header_t *elf_find_section(elf_file_t *file, const char *name);
 
 elf_section_header_t *elf_get_section(elf_file_t *file, uint16_t index);
+
+void *elf_read_section(elf_file_t *file, elf_section_header_t *section_header);
 
 void elf_print_sections(elf_file_t *file);
 

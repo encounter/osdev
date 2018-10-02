@@ -22,20 +22,20 @@
 #define UNGET 8
 
 // Unsigned numbers
-#define PRIu32    "%lu"
+#define PRIu32    "%u"
 #define PRIu64    "%llu"
 
 // Numbers as hex (ex. uint32_t)
-#define PRIx32     "%lXh"
+#define PRIx32     "%Xh"
 #define PRIx64     "%llXh"
 
 // Numbers as zero-padded hex (ex. uint32_t)
-#define PRIX32     "%08lXh"
+#define PRIX32     "%08Xh"
 #define PRIX64     "%016llXh"
 #define PRIX64S    "%08llXh"    // 64-bit w/ 32-bit padding
 
 // Numerical pointers as zero-padded hex (ex. uintptr_t)
-#define PRIXUPTR    "0x%08lX"
+#define PRIXUPTR    "0x%08X"
 #define PRIXUPTR64  "0x%016llX"
 #define PRIXUPTR64S "0x%08llX"   // 64-bit w/ 32-bit padding
 

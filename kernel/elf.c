@@ -54,7 +54,7 @@ bool _check_elf_header(elf_header_t *header) {
         }
         return true;
     } else {
-        printf("_check_elf_header: Got bad magic %04lu != %04lu\n", header->magic, ELF_HEADER_MAGIC_LE);
+        printf("_check_elf_header: Got bad magic %04u != %04u\n", header->magic, ELF_HEADER_MAGIC_LE);
         return false;
     }
 }
@@ -88,7 +88,7 @@ static bool _elf_read_section_header_table(elf_file_t *file) {
     void *buf = NULL;
     uint16_t sh_table_size = header->section_header_entry_size *
                              header->section_header_num_entries;
-    if ((buf = malloc(sh_table_size)) == NULL){
+    if ((buf = malloc(sh_table_size)) == NULL) {
         errno = ENOMEM;
         return false;
     }
@@ -103,42 +103,55 @@ static bool _elf_read_sht_str_section(elf_file_t *file) {
     if (file->sht_str_section != NULL) return true;
     if (!_elf_read_header(file)) return false;
 
-    size_t read = 0;
     elf_header_t *header = file->header;
-    elf_section_header_t *sht_str_header = elf_get_section(file, header->section_header_section_names_idx);
-    if (sht_str_header == NULL ||
-        sht_str_header->size > UINT16_MAX ||
-        fseek(file->fd, sht_str_header->offset, SEEK_SET))
-        return false;
-
-    void *buf = NULL;
-    uint16_t sht_str_size = (uint16_t) sht_str_header->size;
-    if ((buf = malloc(sht_str_size)) == NULL){
-        errno = ENOMEM;
-        return false;
-    }
-    read = fread(buf, sht_str_size, 1, file->fd);
-    if (ferror(file->fd) || !read) return false; // FIXME memory leak
-
-    file->sht_str_section = buf;
-    return true;
+    elf_section_header_t *section_header = elf_get_section(file, header->section_header_section_names_idx);
+    file->sht_str_section = elf_read_section(file, section_header);
+    return file->sht_str_section != NULL;
 }
 
-elf_section_header_t *elf_find_section(elf_file_t *file,
-                                       elf_section_header_type_t type) {
+elf_section_header_t *elf_find_section(elf_file_t *file, const char *name) {
+    if (!_elf_read_section_header_table(file)
+        || !_elf_read_sht_str_section(file))
+        return NULL;
+
     uint16_t num_entries = file->header->section_header_num_entries;
     for (uint16_t i = 0; i < num_entries; ++i) {
         elf_section_header_t *section_header = (void *) file->sht_start + file->header->section_header_entry_size * i;
-        if (section_header->type == type) return section_header;
+        if (strcmp(name, file->sht_str_section + section_header->name) == 0) return section_header;
     }
     return NULL;
 }
 
 elf_section_header_t *elf_get_section(elf_file_t *file,
                                       uint16_t index) {
+    if (!_elf_read_section_header_table(file))
+        return NULL;
+
     uint16_t num_entries = file->header->section_header_num_entries;
     if (index > num_entries - 1) return NULL;
     return (void *) file->sht_start + file->header->section_header_entry_size * index;
+}
+
+void *elf_read_section(elf_file_t *file, elf_section_header_t *section_header) {
+    if (!_elf_read_header(file)) return false;
+
+    if (section_header == NULL ||
+        section_header->size > UINT16_MAX ||
+        fseek(file->fd, section_header->offset, SEEK_SET))
+        return NULL;
+
+    void *buf = NULL;
+    uint16_t section_size = (uint16_t) section_header->size;
+    if ((buf = malloc(section_size)) == NULL) {
+        errno = ENOMEM;
+        return NULL;
+    }
+    if (!fread(buf, section_size, 1, file->fd) || ferror(file->fd)) {
+        free(buf);
+        return NULL;
+    }
+
+    return buf;
 }
 
 static const char *elf_section_type(elf_section_header_type_t type) {
@@ -181,8 +194,7 @@ static const char *elf_section_type(elf_section_header_type_t type) {
 }
 
 void elf_print_sections(elf_file_t *file) {
-    if (!_elf_read_header(file)
-        || !_elf_read_section_header_table(file)
+    if (!_elf_read_section_header_table(file)
         || !_elf_read_sht_str_section(file))
         return;
 

@@ -86,7 +86,7 @@ DRESULT disk_ioctl(
         void *buff        /* Buffer to send/receive control data */
 ) {
     // TODO
-    // printf("called unimplemented function disk_ioctl\n");
+//    printf("disk_ioctl: unimplemented %d\n", pdrv);
     return RES_OK;
 }
 

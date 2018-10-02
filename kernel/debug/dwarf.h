@@ -14,3 +14,5 @@ struct _packed dwarf_debug_line_header {
     uint8_t std_opcode_lengths[12];
 };
 typedef struct dwarf_debug_line_header dwarf_debug_line_header_t;
+
+void *dwarf_find_debug_info();

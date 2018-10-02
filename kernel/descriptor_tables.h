@@ -2,10 +2,12 @@
 
 #include <common.h>
 
+void init_descriptor_tables();
+
 // This structure contains the value of one GDT entry.
 // We use the attribute 'packed' to tell GCC not to change
 // any of the alignment in the structure.
-struct gdt_entry_struct {
+struct gdt_entry {
     uint16_t limit_low;           // The lower 16 bits of the limit.
     uint16_t base_low;            // The lower 16 bits of the base.
     uint8_t base_middle;         // The next 8 bits of the base.
@@ -14,19 +16,19 @@ struct gdt_entry_struct {
     uint8_t base_high;           // The last 8 bits of the base.
 } _packed;
 
-typedef struct gdt_entry_struct gdt_entry_t;
+typedef struct gdt_entry gdt_entry_t;
 
-struct gdt_ptr_struct {
+static_assert(sizeof(gdt_entry_t) == 8, "gdt_entry incorrect size");
+
+struct gdt_ptr {
     uint16_t limit;               // The upper 16 bits of all selector limits.
     uint32_t base;                // The address of the first gdt_entry_t struct.
 } _packed;
 
-typedef struct gdt_ptr_struct gdt_ptr_t;
-
-void init_descriptor_tables();
+typedef struct gdt_ptr gdt_ptr_t;
 
 // A struct describing an interrupt gate.
-struct idt_entry_struct
+struct idt_entry
 {
     uint16_t base_lo;             // The lower 16 bits of the address to jump to when this interrupt fires.
     uint16_t sel;                 // Kernel segment selector.
@@ -34,16 +36,18 @@ struct idt_entry_struct
     uint8_t  flags;               // More flags. See documentation.
     uint16_t base_hi;             // The upper 16 bits of the address to jump to.
 } _packed;
-typedef struct idt_entry_struct idt_entry_t;
+typedef struct idt_entry idt_entry_t;
+
+static_assert(sizeof(idt_entry_t) == 8, "idt_entry incorrect size");
 
 // A struct describing a pointer to an array of interrupt handlers.
 // This is in a format suitable for giving to 'lidt'.
-struct idt_ptr_struct
+struct idt_ptr
 {
     uint16_t limit;
     uint32_t base;                // The address of the first element in our idt_entry_t array.
 } _packed;
-typedef struct idt_ptr_struct idt_ptr_t;
+typedef struct idt_ptr idt_ptr_t;
 
 // These extern directives let us access the addresses of our ASM ISR handlers.
 extern void isr0 ();

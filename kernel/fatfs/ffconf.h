@@ -42,7 +42,7 @@
 /* This option switches f_mkfs() function. (0:Disable or 1:Enable) */
 
 
-#define FF_USE_FASTSEEK	0
+#define FF_USE_FASTSEEK	1
 /* This option switches fast seek function. (0:Disable or 1:Enable) */
 
 
@@ -68,7 +68,7 @@
 / Locale and Namespace Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_CODE_PAGE	932
+#define FF_CODE_PAGE	437
 /* This option specifies the OEM code page to be used on the target system.
 /  Incorrect code page setting can cause a file open failure.
 /
@@ -137,7 +137,7 @@
 /  on character encoding. When LFN is not enabled, these options have no effect. */
 
 
-#define FF_STRF_ENCODE	3
+#define FF_STRF_ENCODE	0
 /* When FF_LFN_UNICODE >= 1 with LFN enabled, string I/O functions, f_gets(),
 /  f_putc(), f_puts and f_printf() convert the character encoding in it.
 /  This option selects assumption of character encoding ON THE FILE to be

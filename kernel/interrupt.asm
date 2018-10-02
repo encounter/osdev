@@ -86,6 +86,10 @@ IRQ 15, 47
 isr_common_stub:
    pusha                    ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
 
+   ; Preserve the MXCSR register.
+   sub     esp,    4
+   stmxcsr [esp]
+
    mov ax, ds               ; Lower 16-bits of eax = ds.
    push eax                 ; save the data segment descriptor
 
@@ -103,6 +107,10 @@ isr_common_stub:
    mov fs, ax
    mov gs, ax
 
+   ; Restore the MXCSR register.
+   ldmxcsr [esp]
+   add     esp,    4
+
    popa                     ; Pops edi,esi,ebp...
    add esp, 8     ; Cleans up the pushed error code and pushed ISR number
    sti
@@ -113,6 +121,10 @@ isr_common_stub:
 ; and finally restores the stack frame.
 irq_common_stub:
    pusha                    ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+
+   ; Preserve the MXCSR register.
+   sub     esp,    4
+   stmxcsr [esp]
 
    mov ax, ds               ; Lower 16-bits of eax = ds.
    push eax                 ; save the data segment descriptor
@@ -130,6 +142,10 @@ irq_common_stub:
    mov es, bx
    mov fs, bx
    mov gs, bx
+
+   ; Restore the MXCSR register.
+   ldmxcsr [esp]
+   add     esp,    4
 
    popa                     ; Pops edi,esi,ebp...
    add esp, 8     ; Cleans up the pushed error code and pushed ISR number

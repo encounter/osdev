@@ -17,7 +17,7 @@ struct chunk_header {
     bool used;
 };
 
-_Static_assert(sizeof(struct chunk_header) % 4 == 0, "chunk_header is misaligned");
+static_assert(sizeof(struct chunk_header) % 4 == 0, "chunk_header is misaligned");
 
 static bool try_reclaim(struct chunk_header *start, size_t size) {
     struct chunk_header *current_chunk = start;

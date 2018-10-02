@@ -9,6 +9,10 @@
 #include "drivers/ata.h"
 #include "fatfs/ff.h"
 
+#ifdef ENABLE_DWARF
+#include "debug/dwarf.h"
+#endif
+
 #include <common.h>
 #include <stdio.h>
 
@@ -40,7 +44,6 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     }
 
 #ifdef ENABLE_DWARF
-    extern void *dwarf_find_debug_info();
     dwarf_find_debug_info();
 #endif
 
@@ -70,7 +73,9 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
 
     while (1) {
         __asm__ volatile("hlt");
+        __asm__ volatile("cli");
         shell_read();
         key_buffer_print();
+        __asm__ volatile("sti");
     }
 }

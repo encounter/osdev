@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #define _noreturn _Noreturn
+#define static_assert _Static_assert
 
 #ifdef __GNUC__
 #define _unused   __attribute__((unused))
