@@ -54,7 +54,9 @@ bool _check_elf_header(elf_header_t *header) {
         }
         return true;
     } else {
+#ifdef ELF_DEBUG
         printf("_check_elf_header: Got bad magic %04u != %04u\n", header->magic, ELF_HEADER_MAGIC_LE);
+#endif
         return false;
     }
 }
@@ -70,7 +72,10 @@ static bool _elf_read_header(elf_file_t *file) {
         return false;
     }
     read = fread(buf, header_size, 1, file->fd);
-    if (ferror(file->fd) || !read || !_check_elf_header(buf)) return false; // FIXME memory leak
+    if (ferror(file->fd) || !read || !_check_elf_header(buf)) {
+        free(buf);
+        return false;
+    }
 
     file->header = buf;
     return true;
@@ -93,7 +98,10 @@ static bool _elf_read_section_header_table(elf_file_t *file) {
         return false;
     }
     read = fread(buf, sh_table_size, 1, file->fd);
-    if (ferror(file->fd) || !read) return false; // FIXME memory leak
+    if (ferror(file->fd) || !read) {
+        free(buf);
+        return false;
+    }
 
     file->sht_start = buf;
     return true;
@@ -194,7 +202,8 @@ static const char *elf_section_type(elf_section_header_type_t type) {
 }
 
 void elf_print_sections(elf_file_t *file) {
-    if (!_elf_read_section_header_table(file)
+    if (!_elf_read_header(file)
+        || !_elf_read_section_header_table(file)
         || !_elf_read_sht_str_section(file))
         return;
 
@@ -211,21 +220,15 @@ void elf_print_sections(elf_file_t *file) {
 }
 
 bool elf_open(elf_file_t *file, const char *filename) {
-    struct stat st;
-
-    if (fstat(filename, &st) || !st.st_size) goto fail;
-
     file->fd = fopen(filename, "r");
-    if (ferror(file->fd))
-        goto fail;
-
-    if (!_elf_read_header(file) || !_elf_read_section_header_table(file)) goto fail;
+    if (ferror(file->fd)
+        || !_elf_read_header(file)
+        || !_elf_read_section_header_table(file)) {
+        elf_close(file);
+        return false;
+    }
 
     return true;
-
-    fail:
-    printf("Failed to read ELF file: %d\n", errno);
-    return false;
 }
 
 void elf_close(elf_file_t *file) {

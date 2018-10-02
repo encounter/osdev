@@ -123,7 +123,7 @@ char *strncpy(char *restrict s1, const char *restrict s2, size_t n) {
     return rc;
 }
 
-char *strdup(char *str) {
+char *strdup(const char *str) {
     size_t len = strlen(str) + 1;
     char *new = malloc(len);
     if (new == NULL) return NULL;
@@ -151,4 +151,120 @@ char *__strchrnul(const char *s, int c) {
 char *strchr(const char *s, int c) {
     char *r = __strchrnul(s, c);
     return *(unsigned char *) r == (unsigned char) c ? r : 0;
+}
+
+size_t strlcpy(char *d, const char *s, size_t n) {
+    char *d0 = d;
+    size_t *wd;
+
+    if (!n--) goto finish;
+#ifdef __GNUC__
+    typedef size_t __attribute__((__may_alias__)) word;
+    const word *ws;
+    if (((uintptr_t) s & _ALIGN) == ((uintptr_t) d & _ALIGN)) {
+        for (; ((uintptr_t) s & _ALIGN) && n && (*d = *s); n--, s++, d++);
+        if (n && *s) {
+            wd = (void *) d;
+            ws = (const void *) s;
+            for (; n >= sizeof(size_t) && !_HASZERO(*ws);
+                   n -= sizeof(size_t), ws++, wd++)
+                *wd = *ws;
+            d = (void *) wd;
+            s = (const void *) ws;
+        }
+    }
+#endif
+    for (; n && (*d = *s); n--, s++, d++);
+    *d = 0;
+    finish:
+    return d - d0 + strlen(s);
+}
+
+
+#define PATH_LOOKAHEAD(p, i, c) ((i < len) && (p[i] == c))
+
+// FIXME insane crazy stupid code but it works, I guess
+void path_append(char *dest, const char *path, const char *app, size_t len) {
+    size_t i = 0, out_idx = 0, dir_idx = 0;
+
+    // Skip existing path if necessary
+    if (app != NULL && app[0] == '/') goto append;
+
+    while (i < len && out_idx < len && path[i] != 0) {
+        if (path[i] == '/') {
+            if (PATH_LOOKAHEAD(path, i + 1, '.')) {
+                if (PATH_LOOKAHEAD(path, i + 2, '.')
+                    && (PATH_LOOKAHEAD(path, i + 3, '/')
+                        || PATH_LOOKAHEAD(path, i + 3, 0))) {
+                    out_idx = dir_idx + 1;
+                    i += 3;
+                    while (PATH_LOOKAHEAD(path, i, '/')) i++;
+                    continue;
+                } else if (PATH_LOOKAHEAD(path, i + 2, '/')
+                           || PATH_LOOKAHEAD(path, i + 2, 0)) {
+                    i += 2;
+                    continue;
+                }
+            } else if (PATH_LOOKAHEAD(path, i + 1, '/')) {
+                i++;
+                continue;
+            }
+            dir_idx = out_idx;
+        }
+
+        dest[out_idx] = path[i];
+        i++;
+        out_idx++;
+    }
+
+    i = 0;
+    if (app == NULL || app[0] == 0) goto close;
+
+    // Check for leading . or ..
+    if (app[i] == '.') {
+        if (PATH_LOOKAHEAD(app, i + 1, '/')) {
+            i += 2;
+        } else if (PATH_LOOKAHEAD(app, i + 1, 0)) {
+            goto close;
+        } else if (PATH_LOOKAHEAD(app, i + 1, '.')
+                   && (PATH_LOOKAHEAD(app, i + 2, '/')
+                       || PATH_LOOKAHEAD(app, i + 2, 0))) {
+            out_idx = dir_idx + 1;
+            i += 2;
+        }
+    }
+
+    if (out_idx && dest[out_idx - 1] != '/' && out_idx < len) dest[dir_idx = out_idx++] = '/'; // Add trailing slash
+    while (i < len && app[i] == '/') i++; // Skip leading slash(es)
+
+    append:
+    while (i < len && out_idx < len && app[i] != 0) {
+        if (app[i] == '/') {
+            if (PATH_LOOKAHEAD(app, i + 1, '.')) {
+                if (PATH_LOOKAHEAD(app, i + 2, '.')
+                    && (PATH_LOOKAHEAD(app, i + 3, '/')
+                        || PATH_LOOKAHEAD(app, i + 3, 0))) {
+                    out_idx = dir_idx + 1;
+                    i += 3;
+                    while (PATH_LOOKAHEAD(app, i, '/')) i++;
+                    continue;
+                } else if (PATH_LOOKAHEAD(app, i + 2, '/')
+                           || PATH_LOOKAHEAD(app, i + 2, 0)) {
+                    i += 2;
+                    continue;
+                }
+            } else if (PATH_LOOKAHEAD(app, i + 1, '/')) {
+                i++;
+                continue;
+            }
+            dir_idx = out_idx;
+        }
+
+        dest[out_idx] = app[i];
+        i++;
+        out_idx++;
+    }
+
+    close:
+    dest[out_idx] = 0;
 }

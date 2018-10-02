@@ -8,12 +8,17 @@
 #include "drivers/pci.h"
 #include "drivers/pci_registry.h"
 #include "drivers/ata.h"
+#include "elf.h"
+
+// FIXME
+#include "fatfs/ff.h"
 
 #include <string.h>
 #include <malloc.h>
 #include <vector.h>
 #include <math.h>
 #include <stdio.h>
+#include <errno.h>
 
 #define KEY_BUFFER_INITIAL_SIZE 0x100
 static char *key_buffer;
@@ -23,6 +28,8 @@ static size_t key_buffer_printed;
 
 static vc_vector *shell_history;
 static size_t shell_history_offset = 0;
+
+static bool _fs_mounted = false;
 
 void command_lspci() {
     vc_vector *pci_devices = pci_get_devices();
@@ -49,9 +56,113 @@ void command_lsata() {
     for (uint8_t i = 0; i < 4; i++) {
         if (ide_devices[i].reserved == 1) {
             const char *type_str = ((const char *[]) {"ATA  ", "ATAPI"}[ide_devices[i].type]);
-            printf("%d: %s | %016lu sectors | %s\n", i, type_str, ide_devices[i].size, ide_devices[i].model);
+            printf("%d: %s | %016u sectors | %s\n", i, type_str, ide_devices[i].size, ide_devices[i].model);
         }
     }
+}
+
+static char curr_path[512] = "/";
+
+static uint8_t command_mkdir(const char *path) {
+    if (!_fs_mounted) return 255;
+
+    FRESULT fret;
+    char buf[512];
+
+    path_append(buf, curr_path, path, sizeof(buf));
+    if ((fret = f_mkdir(buf)) != FR_OK) {
+        printf("Error mkdir %s: %d\n", buf, fret);
+        return 1;
+    }
+    return 0;
+}
+
+static uint8_t command_cd(const char *path) {
+    if (!_fs_mounted) return 255;
+
+    DIR dir;
+    FRESULT fret;
+    char buf[512];
+
+    path_append(buf, curr_path, path, sizeof(buf));
+    if ((fret = f_opendir(&dir, buf)) != FR_OK) {
+        printf("Error opening %s: %d\n", buf, fret);
+        return 1;
+    }
+    if ((fret = f_closedir(&dir)) != FR_OK) {
+        printf("Error closing %s: %d\n", buf, fret);
+        return 2;
+    }
+    strncpy(curr_path, buf, sizeof(curr_path));
+    return 0;
+}
+
+static uint8_t command_ls(const char *path) {
+    if (!_fs_mounted) return 255;
+
+    DIR dir;
+    FILINFO info;
+    FRESULT fret;
+    char buf[512];
+    size_t count = 0;
+
+    path_append(buf, curr_path, path, sizeof(buf));
+    if ((fret = f_opendir(&dir, buf)) != FR_OK) {
+        printf("Error opening %s: %d\n", buf, fret);
+        return 1;
+    }
+    fret = f_readdir(&dir, &info);
+    while (fret == FR_OK && info.fname[0] != 0) {
+        count++;
+        printf(". %s\n", info.fname);
+        fret = f_readdir(&dir, &info);
+    }
+    if (fret != FR_OK && fret != FR_NO_FILE) {
+        printf("Error listing files: %d\n", fret);
+        return 2;
+    }
+    printf("total %zu\n", count);
+    return 0;
+}
+
+static uint8_t command_rm(const char *path) {
+    if (!_fs_mounted) return 255;
+
+    FRESULT fret;
+    char buf[512];
+
+    path_append(buf, curr_path, path, sizeof(buf));
+    if ((fret = f_unlink(buf)) != FR_OK) {
+        printf("Error removing %s: %d\n", buf, fret);
+        return 1;
+    }
+    return 0;
+}
+
+static uint8_t command_objdump(const char *path) {
+    if (!_fs_mounted) return 255;
+    
+    elf_file_t file = {};
+    char buf[512];
+
+    path_append(buf, curr_path, path, sizeof(buf));
+    if (!elf_open(&file, buf)) {
+        printf("Error opening %s: %d\n", buf, errno);
+        return 1;
+    }
+
+    elf_print_sections(&file);
+    elf_close(&file);
+    return 0;
+}
+
+static void print_prompt(unsigned char ret) {
+    if (_fs_mounted) {
+        printf("%d %s # ", ret, curr_path);
+    } else {
+        printf("%d # ", ret);
+    }
+    fflush(stdout);
 }
 
 static void shell_callback(char *input) {
@@ -67,7 +178,7 @@ static void shell_callback(char *input) {
         reboot();
     } else if (strcmp(input, "clear") == 0) {
         clear_screen();
-        printf("# ");
+        print_prompt(0);
         return;
     } else if (strncmp(input, "echo ", 5) == 0) {
         printf("%s\n", input + 5);
@@ -95,18 +206,31 @@ static void shell_callback(char *input) {
         ret = (unsigned char) !fatfs_test();
     } else if (strcmp(input, "test stdio") == 0) {
         ret = (unsigned char) !stdio_test();
+    } else if (strcmp(input, "test path") == 0) {
+        ret = (unsigned char) !path_test();
     } else if (strcmp(input, "test") == 0 ||
                strncmp(input, "test ", 5) == 0) {
-        printf("Available tests:\n  vector\n  fatfs\n");
+        printf("Available tests:\n  vector\n  fatfs\n  stdio\n  path\n");
     } else if (strcmp(input, "lspci") == 0) {
         command_lspci();
         ret = 0;
     } else if (strcmp(input, "lsata") == 0) {
         command_lsata();
         ret = 0;
+    } else if (strncmp(input, "mkdir ", 6) == 0) {
+        ret = command_mkdir(input + 6);
+    } else if (strncmp(input, "cd ", 3) == 0) {
+        ret = command_cd(input + 3);
+    } else if (strncmp(input, "ls ", 3) == 0 || strncmp(input, "ll ", 3) == 0) {
+        ret = command_ls(input + 3);
+    } else if (strcmp(input, "ls") == 0 || strcmp(input, "ll") == 0) {
+        ret = command_ls(NULL);
+    } else if (strncmp(input, "rm ", 3) == 0) {
+        ret = command_rm(input + 3);
+    } else if (strncmp(input, "objdump ", 8) == 0) {
+        ret = command_objdump(input + 8);
     }
-    printf("%d # ", ret);
-    fflush(stdout);
+    print_prompt(ret);
 
     if (save && input[0] != '\0') {
         char *value = strdup(input);
@@ -118,11 +242,11 @@ static void shell_history_free_func(void *data) {
     free(*(char **) data);
 }
 
-void shell_init() {
+void shell_init(bool fs_mounted) {
+    _fs_mounted = fs_mounted;
     shell_history = vc_vector_create(0x100, sizeof(char *), shell_history_free_func);
     init_keyboard();
-    printf("# ");
-    fflush(stdout);
+    print_prompt((unsigned char) !fs_mounted);
 }
 
 void shell_read() {

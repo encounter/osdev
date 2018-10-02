@@ -6,18 +6,6 @@
 
 #define VIDEO_ADDRESS ((uint16_t *) 0xC00B8000)
 
-/**********************************************************
- * Private kernel functions                               *
- **********************************************************/
-
-/**
- * Innermost print function for our kernel, directly accesses the video memory 
- *
- * If 'col' and 'row' are negative, we will print at current cursor location
- * If 'attr' is zero it will use 'white on black' as default
- * Returns the offset of the next character
- * Sets the video cursor to the returned offset
- */
 int vga_print_char(char c, int col, int row, char attr) {
     if (!attr) attr = WHITE_ON_BLACK;
 

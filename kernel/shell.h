@@ -2,7 +2,7 @@
 
 #include <common.h>
 
-void shell_init();
+void shell_init(bool fs_mounted);
 
 void shell_read();
 

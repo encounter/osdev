@@ -27,6 +27,10 @@ char *strcpy(char *destination, const char *source);
 
 char *strncpy(char *restrict s1, const char *restrict s2, size_t n);
 
-char *strdup(char *str);
+char *strdup(const char *str);
 
 char *strchr(const char *s, int c);
+
+size_t strlcpy(char *d, const char *s, size_t n);
+
+void path_append(char *dest, const char *path, const char *app, size_t len);

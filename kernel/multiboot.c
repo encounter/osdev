@@ -3,7 +3,7 @@
 #include "console.h"
 
 #define PAGE_OFFSET 0xC0000000
-#define KERNEL_OFFSET 0x100000 // FIXME
+#define KERNEL_OFFSET 0x200000 // FIXME
 
 extern void *malloc_memory_start;
 extern void *malloc_memory_end;
@@ -13,6 +13,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         panic("multiboot_magic: Invalid magic "PRIX32"\n", magic);
     }
 
+    // XXX: uintptr_t hack b/c of compiler optimization which then triggers ubsan ¯\_(ツ)_/¯
     struct multiboot_info *info = (struct multiboot_info *) ((uintptr_t) info_ptr + PAGE_OFFSET);
     printf("multiboot_info = "PRIXPTR", flags = "PRIx32"\n", info, info->flags);
 

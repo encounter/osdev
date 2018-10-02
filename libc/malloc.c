@@ -1,10 +1,11 @@
 #include "malloc.h"
 #include "stdio.h"
+#include "../kernel/console.h"
 
 #include <string.h>
 #include <limits.h>
 
-// #define MALLOC_DEBUG
+ #define MALLOC_DEBUG
 
 void *malloc_memory_start = (void *) 0x1000000; // 1 MiB, start of x86 upper memory
 void *malloc_memory_end = NULL;
@@ -14,7 +15,7 @@ struct chunk_header {
     struct chunk_header *next;
     struct chunk_header *prev;
     size_t size;
-    bool used;
+    unsigned short used;
 };
 
 static_assert(sizeof(struct chunk_header) % 4 == 0, "chunk_header is misaligned");
@@ -29,17 +30,18 @@ static bool try_reclaim(struct chunk_header *start, size_t size) {
         struct chunk_header *next_chunk = current_chunk->next;
         if (next_chunk == NULL) {
 #ifdef MALLOC_DEBUG
-            kprint("unused until end of chunks\n");
+            printf("unused until end of chunks\n");
 #endif
             start->next = NULL;
             return true;
         }
 
-        unused += ((void *) current_chunk) - ((void *) current_chunk->prev);
+        unused += (uintptr_t) current_chunk - (uintptr_t) current_chunk->prev;
 #ifdef MALLOC_DEBUG
-        kprint("found unused size "); kprint_uint32(unused); kprint("\n");
+        printf("found unused size %zu\n", unused);
 #endif
-        if (unused >= size) {
+        // FIXME do i need ALIGN here?
+        if (unused >= ALIGN(size, 4) + sizeof(struct chunk_header)) {
             next_chunk->prev = start;
             start->next = next_chunk;
             return true;
@@ -58,7 +60,7 @@ static void *find_unused_chunk(const size_t chunk_size) {
 
         // First chunk @ start of memory
 #ifdef MALLOC_DEBUG
-        kprint("new chunk @ start: "); kprint_uint32(chunk_size); kprint("\n");
+        printf("new chunk @ start: %zu\n", chunk_size);
 #endif
         struct chunk_header *header = malloc_memory_start;
         memset(header, 0, sizeof(struct chunk_header));
@@ -71,7 +73,7 @@ static void *find_unused_chunk(const size_t chunk_size) {
             if (header->size >= chunk_size) {
                 // Unused chunk is large enough, go ahead and use it
 #ifdef MALLOC_DEBUG
-                kprint("reusing large enough chunk "); kprint_uint32(header->size); kprint(" for "); kprint_uint32(chunk_size); kprint("\n");
+                printf("reusing large enough chunk %zu for %zu\n", header->size, chunk_size);
 #endif
                 return header;
             } else if (try_reclaim(header, chunk_size)) {
@@ -83,7 +85,7 @@ static void *find_unused_chunk(const size_t chunk_size) {
         // Allocate new chunk if end
         if (header->next == NULL) {
 #ifdef MALLOC_DEBUG
-            kprint("alloc new chunk size: "); kprint_uint32(chunk_size); kprint("\n");
+            printf("alloc new chunk size: %zu\n", chunk_size);
 #endif
             void *next = (void *) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
             if (next + chunk_size > malloc_memory_end) break; // Don't overcommit new chunk
@@ -96,11 +98,14 @@ static void *find_unused_chunk(const size_t chunk_size) {
 
         // Find space in between chunks
         uintptr_t end_of_chunk = (uintptr_t) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
+        if (end_of_chunk > (uintptr_t) header->next) {
+            panic("found misaligned chunk %P. Expected end: %P, actual next: %P\n", header, end_of_chunk, header->next);
+        }
         uintptr_t unused_size = (uintptr_t) header->next - end_of_chunk;
         if (unused_size > chunk_size + sizeof(struct chunk_header)) {
 #ifdef MALLOC_DEBUG
-            kprint("found size between chunk: "); kprint_uint32(unused_size); kprint(" > "); kprint_uint32(chunk_size); kprint("\n");
-            kprint("chunk 1: "); kprint_uint32((uintptr_t) header); kprint(" | chunk 2: "); kprint_uint32((uintptr_t) header->next); kprint("\n");
+            printf("found size between chunk: %zu > %zu\n", unused_size, chunk_size);
+            printf("  chunk 1: %P (size %zu) | chunk 2: %P\n", header, header->size, header->next);
 #endif
             struct chunk_header *next_header = (struct chunk_header *) end_of_chunk;
             memset(next_header, 0, sizeof(struct chunk_header));
@@ -134,12 +139,13 @@ void free(void *ptr) {
     struct chunk_header *header = ptr - sizeof(struct chunk_header);
     header->used = false;
 #ifdef MALLOC_DEBUG
-    kprint("freeing chunk w/ size "); kprint_uint32(header->size); kprint("\n");
+    printf("freeing chunk w/ size %zu\n", header->size);
 #endif
 }
 
 void *realloc(void *ptr, size_t new_size) {
     if (ptr == NULL) return malloc(new_size);
+
     struct chunk_header *header = ptr - sizeof(struct chunk_header);
     if (header->size >= new_size || try_reclaim(header, new_size)) {
         header->size = new_size;
@@ -173,7 +179,8 @@ static unsigned digits(uint32_t n) {
             1, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5,
             5, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 9, 9, 9, 10, 10, 10,
     };
-    unsigned bits = sizeof(n) * CHAR_BIT - __builtin_clz(n);
+    extern int __clzsi2(unsigned); // FIXME
+    unsigned bits = sizeof(n) * CHAR_BIT - __clzsi2(n);
     unsigned digits = max_digits[bits];
     if (n < powers[digits - 1]) --digits;
     return digits;
@@ -201,7 +208,7 @@ void print_chunk_debug(void *ptr, bool recursive) {
     struct chunk_header *header = ptr - sizeof(struct chunk_header);
     do {
         char *str_size = pretty_bytes(header->size);
-        printf("chunk @ %p | next: %p, prev: %p, used: %d, size: %s\n",
+        printf("chunk @ %P | next: %P, prev: %P, used: %d, size: %s\n",
                header, header->next, header->prev, header->used, str_size);
         free(str_size);
 

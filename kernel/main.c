@@ -34,17 +34,19 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
     // uint32_t i = UINT32_MAX / 16;
     // while(i--); // stall
 
+    bool fs_mounted = false;
     printf("Mounting drive 0... ");
     FATFS fs;
     FRESULT ret = f_mount(&fs, "", 1);
     if (ret == FR_OK) {
         printf("OK\n");
+        fs_mounted = true;
     } else {
         printf("fail %d\n", ret);
     }
 
 #ifdef ENABLE_DWARF
-    dwarf_find_debug_info();
+//    dwarf_find_debug_info();
 #endif
 
     console_set_vga_enabled(vga_enabled);
@@ -58,7 +60,7 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
 #ifdef KDEBUG
     kprint("Setting up IRQ handlers...\n");
 #endif
-    shell_init();
+    shell_init(fs_mounted);
 
 #ifdef KDEBUG
     kprint("Enabling maskable interrupts...\n");
