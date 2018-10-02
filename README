@@ -7,6 +7,8 @@ make -C build
 qemu-system-i386 -kernel kernel.bin
 
 # via Grub:
+# https://wiki.osdev.org/GRUB_2#Installing_GRUB_2_on_OS_X
+# brew install xorriso
 ./mkiso.sh kernel.bin
 qemu-system-i386 -cdrom os.iso
 

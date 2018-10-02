@@ -5,7 +5,7 @@
 #include <string.h>
 #include <limits.h>
 
- #define MALLOC_DEBUG
+// #define MALLOC_DEBUG
 
 void *malloc_memory_start = (void *) 0x1000000; // 1 MiB, start of x86 upper memory
 void *malloc_memory_end = NULL;
@@ -36,10 +36,7 @@ static bool try_reclaim(struct chunk_header *start, size_t size) {
             return true;
         }
 
-        unused += (uintptr_t) current_chunk - (uintptr_t) current_chunk->prev;
-#ifdef MALLOC_DEBUG
-        printf("found unused size %zu\n", unused);
-#endif
+        unused += (uintptr_t) next_chunk - (uintptr_t) current_chunk;
         // FIXME do i need ALIGN here?
         if (unused >= ALIGN(size, 4) + sizeof(struct chunk_header)) {
             next_chunk->prev = start;
@@ -73,7 +70,7 @@ static void *find_unused_chunk(const size_t chunk_size) {
             if (header->size >= chunk_size) {
                 // Unused chunk is large enough, go ahead and use it
 #ifdef MALLOC_DEBUG
-                printf("reusing large enough chunk %zu for %zu\n", header->size, chunk_size);
+                printf("reusing large enough chunk %P, %zu > %zu\n", header, header->size, chunk_size);
 #endif
                 return header;
             } else if (try_reclaim(header, chunk_size)) {
@@ -84,11 +81,11 @@ static void *find_unused_chunk(const size_t chunk_size) {
 
         // Allocate new chunk if end
         if (header->next == NULL) {
-#ifdef MALLOC_DEBUG
-            printf("alloc new chunk size: %zu\n", chunk_size);
-#endif
             void *next = (void *) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
             if (next + chunk_size > malloc_memory_end) break; // Don't overcommit new chunk
+#ifdef MALLOC_DEBUG
+            printf("alloc new chunk %P size: %zu\n", next, chunk_size);
+#endif
 
             struct chunk_header *next_header = memset(next, 0, sizeof(struct chunk_header));
             header->next = next_header;
@@ -99,7 +96,8 @@ static void *find_unused_chunk(const size_t chunk_size) {
         // Find space in between chunks
         uintptr_t end_of_chunk = (uintptr_t) header + sizeof(struct chunk_header) + ALIGN(header->size, 4);
         if (end_of_chunk > (uintptr_t) header->next) {
-            panic("found misaligned chunk %P. Expected end: %P, actual next: %P\n", header, end_of_chunk, header->next);
+            panic("found misaligned chunk %P (size %zu). Expected end: %P, actual next: %P\n",
+                  header, header->size, end_of_chunk, header->next);
         }
         uintptr_t unused_size = (uintptr_t) header->next - end_of_chunk;
         if (unused_size > chunk_size + sizeof(struct chunk_header)) {
@@ -123,6 +121,9 @@ static void *find_unused_chunk(const size_t chunk_size) {
 }
 
 void *malloc(size_t size) {
+#ifdef MALLOC_DEBUG
+    printf("malloc called with size %zu\n", size);
+#endif
     void *chunk = find_unused_chunk(size);
     if (chunk == NULL) {
         return NULL;
@@ -139,7 +140,7 @@ void free(void *ptr) {
     struct chunk_header *header = ptr - sizeof(struct chunk_header);
     header->used = false;
 #ifdef MALLOC_DEBUG
-    printf("freeing chunk w/ size %zu\n", header->size);
+    printf("freed chunk %P w/ size %zu\n", header, header->size);
 #endif
 }
 

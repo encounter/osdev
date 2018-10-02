@@ -17,11 +17,11 @@ void *dwarf_find_debug_info() {
     void *debug_line_ptr = NULL;
     uint32_t read = 0;
 
-    elf_file_t elf_file = {};
-    if (!elf_open(&elf_file, "kernel.bin")) goto fail;
-    elf_print_sections(&elf_file);
+    elf_file_t *elf_file;
+    if ((elf_file = elf_open("kernel.bin")) == NULL) goto fail;
+    elf_print_sections(elf_file);
 
-    elf_section_header_t *debug_line_section = elf_find_section(&elf_file, ".debug_line");
+    elf_section_header_t *debug_line_section = elf_find_section(elf_file, ".debug_line");
     if (debug_line_section == NULL || debug_line_section->size > UINT16_MAX) goto fail;
 
 //    ret = f_lseek(&file, debug_line_section->offset);
@@ -45,7 +45,7 @@ void *dwarf_find_debug_info() {
     printf("Failed to read DWARF info: %d\n", errno);
 
     end:
-    elf_close(&elf_file);
+    elf_close(elf_file);
     free(debug_line_ptr);
     return NULL;
 }

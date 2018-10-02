@@ -142,17 +142,17 @@ static uint8_t command_rm(const char *path) {
 static uint8_t command_objdump(const char *path) {
     if (!_fs_mounted) return 255;
     
-    elf_file_t file = {};
+    elf_file_t *file;
     char buf[512];
 
     path_append(buf, curr_path, path, sizeof(buf));
-    if (!elf_open(&file, buf)) {
+    if ((file = elf_open(buf)) == NULL) {
         printf("Error opening %s: %d\n", buf, errno);
         return 1;
     }
 
-    elf_print_sections(&file);
-    elf_close(&file);
+    elf_print_sections(file);
+    elf_close(file);
     return 0;
 }
 

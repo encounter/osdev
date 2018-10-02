@@ -11,52 +11,22 @@
 bool _check_elf_header(elf_header_t *header) {
     if (header->magic == ELF_HEADER_MAGIC_LE) {
         if (header->arch_bits != ELF_ARCH_BITS_32) {
-#ifdef ELF_DEBUG
-            kprint("read_elf_header: incorrect arch_bits = ");
-            kprint_uint8(header->arch_bits);
-            kprint_char('\n');
-#endif
             return false;
         }
         if (header->endianness != ELF_ENDIANNESS_LITTLE) {
-#ifdef ELF_DEBUG
-            kprint("read_elf_header: incorrect endianness = ");
-            kprint_uint8(header->endianness);
-            kprint_char('\n');
-#endif
             return false;
         }
         if (header->machine_type != ELF_IS_X86) {
-#ifdef ELF_DEBUG
-            kprint("read_elf_header: incorrect instruction_set = ");
-            kprint_uint16(header->machine_type);
-            kprint_char('\n');
-#endif
             return false;
         }
         if (header->header_size > sizeof(elf_header_t)) {
-#ifdef ELF_DEBUG
-            kprint("read_elf_header: incorrect header_size = ");
-            kprint_uint16(header->header_size);
-            kprint_char('\n');
-#endif
             return false;
         }
         if (header->section_header_entry_size > sizeof(elf_section_header_t)) {
-#ifdef ELF_DEBUG
-            kprint("read_elf_header: incorrect section header entry size = ");
-            kprint_uint16(header->section_header_entry_size);
-            kprint(" != ");
-            kprint_uint16((uint16_t) sizeof(elf_section_header_t));
-            kprint_char('\n');
-#endif
             return false;
         }
         return true;
     } else {
-#ifdef ELF_DEBUG
-        printf("_check_elf_header: Got bad magic %04u != %04u\n", header->magic, ELF_HEADER_MAGIC_LE);
-#endif
         return false;
     }
 }
@@ -113,6 +83,7 @@ static bool _elf_read_sht_str_section(elf_file_t *file) {
 
     elf_header_t *header = file->header;
     elf_section_header_t *section_header = elf_get_section(file, header->section_header_section_names_idx);
+    if (section_header == NULL) return NULL;
     file->sht_str_section = elf_read_section(file, section_header);
     return file->sht_str_section != NULL;
 }
@@ -219,16 +190,23 @@ void elf_print_sections(elf_file_t *file) {
     }
 }
 
-bool elf_open(elf_file_t *file, const char *filename) {
+elf_file_t *elf_open(const char *filename) {
+    elf_file_t *file = malloc(sizeof(elf_file_t));
+    if (file == NULL) {
+        errno = ENOMEM;
+        return NULL;
+    }
+    memset(file, 0, sizeof(elf_file_t));
+
     file->fd = fopen(filename, "r");
     if (ferror(file->fd)
         || !_elf_read_header(file)
         || !_elf_read_section_header_table(file)) {
         elf_close(file);
-        return false;
+        return NULL;
     }
 
-    return true;
+    return file;
 }
 
 void elf_close(elf_file_t *file) {
@@ -237,4 +215,5 @@ void elf_close(elf_file_t *file) {
     free(file->header);
     free(file->sht_start);
     free(file->sht_str_section);
+    free(file);
 }

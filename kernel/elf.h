@@ -140,6 +140,6 @@ void *elf_read_section(elf_file_t *file, elf_section_header_t *section_header);
 
 void elf_print_sections(elf_file_t *file);
 
-bool elf_open(elf_file_t *file, const char *filename);
+elf_file_t *elf_open(const char *filename);
 
 void elf_close(elf_file_t *file);
