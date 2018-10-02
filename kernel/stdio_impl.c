@@ -229,7 +229,7 @@ size_t fread(void *restrict destv, size_t size, size_t nmemb, FILE *restrict f) 
     return nmemb;
 }
 
-int fstat(const char *filename, struct stat *st) {
+int stat(const char *filename, struct stat *st) {
     FILINFO info;
     FRESULT ret = f_stat(filename, &info);
     if (ret != FR_OK) {

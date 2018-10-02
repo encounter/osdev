@@ -97,7 +97,8 @@ FILE *fopen(const char *filename, const char *mode);
 int fclose(FILE *f);
 
 // int fstat(int fd, struct stat *st); FIXME once fds are implemented
-int fstat(const char *filename, struct stat *st);
+
+int stat(const char *filename, struct stat *st);
 
 int fseek(FILE *f, off_t off, int origin);
 

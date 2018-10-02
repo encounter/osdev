@@ -14,10 +14,10 @@ const char test_str[] = "fwrite";
 
 extern int ff_abrt_line;
 
-static bool fstat_test() {
+static bool stat_test() {
     struct stat st;
-    bool ret = !(fstat(filename, &st) || !st.st_size);
-    printf("fstat_test: %s.\n", ret ? "passed" : "failed");
+    bool ret = !(stat(filename, &st) || !st.st_size);
+    printf("stat_test: %s.\n", ret ? "passed" : "failed");
     return ret;
 }
 
@@ -29,7 +29,7 @@ static bool fread_test() {
     FILE *file = {0};
     void *buff = NULL;
 
-    if (fstat(filename, &st) || !st.st_size) FAIL();
+    if (stat(filename, &st) || !st.st_size) FAIL();
     printf("Opening %s with size %llu...\n", filename, st.st_size);
     file = fopen(filename, "r");
     if (ferror(file)) FAIL();
@@ -63,7 +63,7 @@ static bool fwrite_test() {
     void *rbuff = NULL;
     void *wbuff = NULL;
 
-    if (fstat(filename, &st) || !st.st_size) FAIL();
+    if (stat(filename, &st) || !st.st_size) FAIL();
     printf("Opening %s for updating... %lli\n", filename, st.st_size);
     file = fopen(filename, "r+");
     if (ferror(file)) FAIL();
@@ -74,7 +74,7 @@ static bool fwrite_test() {
     if (!fwrite(test_str, sizeof(test_str) - 1, 1, file) || ferror(file)) FAIL();
     if (fclose(file)) FAIL();
 
-    if (fstat(filename, &st) || !st.st_size) FAIL();
+    if (stat(filename, &st) || !st.st_size) FAIL();
     printf("Re-open %s for updating... %lli\n", filename, st.st_size);
     file = fopen(filename, "r+");
     if (ferror(file)) FAIL();
@@ -103,7 +103,7 @@ static bool fwrite_test() {
 }
 
 bool stdio_test() {
-    return fstat_test() &&
+    return stat_test() &&
            fread_test() &&
            fwrite_test();
 }
