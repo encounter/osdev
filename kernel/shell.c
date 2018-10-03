@@ -71,7 +71,7 @@ static uint8_t command_mkdir(const char *path) {
 
     path_append(buf, curr_path, path, sizeof(buf));
     if ((fret = f_mkdir(buf)) != FR_OK) {
-        printf("Error mkdir %s: %d\n", buf, fret);
+        fprintf(stderr, "Error mkdir %s: %d\n", buf, fret);
         return 1;
     }
     return 0;
@@ -86,11 +86,11 @@ static uint8_t command_cd(const char *path) {
 
     path_append(buf, curr_path, path, sizeof(buf));
     if ((fret = f_opendir(&dir, buf)) != FR_OK) {
-        printf("Error opening %s: %d\n", buf, fret);
+        fprintf(stderr, "Error opening %s: %d\n", buf, fret);
         return 1;
     }
     if ((fret = f_closedir(&dir)) != FR_OK) {
-        printf("Error closing %s: %d\n", buf, fret);
+        fprintf(stderr, "Error closing %s: %d\n", buf, fret);
         return 2;
     }
     strncpy(curr_path, buf, sizeof(curr_path));
@@ -108,7 +108,7 @@ static uint8_t command_ls(const char *path) {
 
     path_append(buf, curr_path, path, sizeof(buf));
     if ((fret = f_opendir(&dir, buf)) != FR_OK) {
-        printf("Error opening %s: %d\n", buf, fret);
+        fprintf(stderr, "Error opening %s: %d\n", buf, fret);
         return 1;
     }
     fret = f_readdir(&dir, &info);
@@ -118,7 +118,7 @@ static uint8_t command_ls(const char *path) {
         fret = f_readdir(&dir, &info);
     }
     if (fret != FR_OK && fret != FR_NO_FILE) {
-        printf("Error listing files: %d\n", fret);
+        fprintf(stderr, "Error listing files: %d\n", fret);
         return 2;
     }
     printf("total %zu\n", count);
@@ -133,7 +133,7 @@ static uint8_t command_rm(const char *path) {
 
     path_append(buf, curr_path, path, sizeof(buf));
     if ((fret = f_unlink(buf)) != FR_OK) {
-        printf("Error removing %s: %d\n", buf, fret);
+        fprintf(stderr, "Error removing %s: %d\n", buf, fret);
         return 1;
     }
     return 0;
@@ -147,12 +147,42 @@ static uint8_t command_objdump(const char *path) {
 
     path_append(buf, curr_path, path, sizeof(buf));
     if ((file = elf_open(buf)) == NULL) {
-        printf("Error opening %s: %d\n", buf, errno);
+        fprintf(stderr, "Error opening %s: %d\n", buf, errno);
         return 1;
     }
 
     elf_print_sections(file);
     elf_close(file);
+    return 0;
+}
+
+static uint8_t command_cat(const char *path) {
+    if (!_fs_mounted) return 255;
+
+    FILE *file;
+    char path_buf[512];
+    char read_buf[512];
+
+    path_append(path_buf, curr_path, path, sizeof(path_buf));
+    file = fopen(path_buf, "r");
+    if (ferror(file)) {
+        fprintf(stderr, "Error opening %s: %d\n", path_buf, errno);
+        if (file != NULL) fclose(file);
+        return 1;
+    }
+
+    size_t read = 0;
+    while (!feof(file)) {
+        read = fread(read_buf, 1, sizeof(read_buf), file);
+        if (ferror(file)) {
+            fprintf(stderr, "Error reading %s: %d\n", path_buf, errno);
+            fclose(file);
+            return 2;
+        }
+        fwrite(read_buf, read, 1, stdout);
+    }
+
+    fclose(file);
     return 0;
 }
 
@@ -229,6 +259,8 @@ static void shell_callback(char *input) {
         ret = command_rm(input + 3);
     } else if (strncmp(input, "objdump ", 8) == 0) {
         ret = command_objdump(input + 8);
+    } else if (strncmp(input, "cat ", 4) == 0) {
+        ret = command_cat(input + 4);
     }
     print_prompt(ret);
 

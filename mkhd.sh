@@ -1,14 +1,15 @@
 #!/bin/bash -ex
-if [ ! -f "$1" ]; then
-  echo "Pass kernel as first arg" >&2
+if [ ! -d "$1" ]; then
+  echo "Pass build directory as first arg" >&2
   exit 1
 fi
 
 rm -f hd.img hd.dmg
 if [ "$(uname)" == "Darwin" ]; then
-    mkdir tmp
-    cp "$1" tmp/kernel.bin
+    mkdir -p tmp/bin
+    cp "$1/kernel.bin" tmp/kernel.bin
     cp "README" tmp/README
+    gfind "$1/bin" -type f -executable -exec cp {} tmp/bin \;
 
     hdiutil create -size 10m -fs exfat -srcfolder tmp hd
     qemu-img convert hd.dmg -O qcow2 hd.img
@@ -18,8 +19,10 @@ else
     mkfs -t exfat hd.img
     LDEV="$(udisksctl loop-setup -f hd.img | cut -d' ' -f5 | head -c-2)"
     MPAT="$(udisksctl mount -b "$LDEV" | cut -d' ' -f4 | head -c-2)"
-    cp "$1" "$MPAT/kernel.bin"
+    mkdir "$MPAT/bin"
+    cp "$1/kernel.bin" "$MPAT/kernel.bin"
     cp "README" "$MPAT/README"
+    find "$1/bin" -type f -executable -exec cp {} "$MPAT/bin" \;
     sync
     udisksctl unmount -b "$LDEV"
     udisksctl loop-delete -b "$LDEV"

@@ -100,8 +100,8 @@ size_t __stdout_write(FILE *f, const char *str, size_t len) {
 
 size_t __stderr_write(FILE *f, const char *str, size_t len) {
     size_t rem = f->wpos - f->wbase;
-    if (rem) knprint(f->wbase, rem, RED_ON_WHITE);
-    if (len) knprint(str, len, RED_ON_WHITE);
+    if (rem) knprint(f->wbase, rem, RED_ON_BLACK);
+    if (len) knprint(str, len, RED_ON_BLACK);
 
     f->wend = f->buf + f->buf_size;
     f->wpos = f->wbase = f->buf;

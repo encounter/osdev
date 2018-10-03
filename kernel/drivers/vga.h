@@ -44,6 +44,7 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
 
 // Attribute byte for our default colour scheme.
 #define WHITE_ON_BLACK (vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK))
+#define RED_ON_BLACK (vga_entry_color(VGA_COLOR_RED, VGA_COLOR_BLACK))
 #define RED_ON_WHITE (vga_entry_color(VGA_COLOR_RED, VGA_COLOR_WHITE))
 
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {

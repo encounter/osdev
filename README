@@ -26,7 +26,7 @@ qemu-system-i386 -cdrom os.iso
 
 # -----------------
 # Full example:
-make -C build && ./mkiso.sh build/kernel.bin && ./mkhd.sh build/kernel.bin && \
+make -C build && ./mkiso.sh build/kernel.bin && ./mkhd.sh build && \
 qemu-system-i386 -cdrom os.iso -serial stdio \
 -device isa-debug-exit,iobase=0xf4,iosize=0x04 \
 -drive file=hd.img,if=ide,format=raw -boot d

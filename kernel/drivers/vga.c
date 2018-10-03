@@ -25,7 +25,7 @@ int vga_print_char(char c, int col, int row, char attr) {
         row = vga_get_offset_row(offset);
         offset = vga_get_offset(0, row + 1);
     } else {
-        VIDEO_ADDRESS[offset++] = (uint16_t) (attr << 8 | c);
+        VIDEO_ADDRESS[offset++] = ((uint16_t) attr << 8 | c);
     }
     vga_set_cursor_offset(offset = vga_handle_scrolling(offset));
     return offset;
