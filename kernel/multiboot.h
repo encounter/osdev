@@ -50,8 +50,6 @@
 #define MULTIBOOT_MEMORY_NVS                    4
 #define MULTIBOOT_MEMORY_BADRAM                 5
 
-#define CHECK_FLAG(flags, flag)   (((flags) & (flag)) == (flag))
-
 struct multiboot_aout_symbol_table {
     uint32_t tabsize;
     uint32_t strsize;

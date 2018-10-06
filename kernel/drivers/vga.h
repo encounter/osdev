@@ -9,6 +9,30 @@
 #define REG_SCREEN_CTRL 0x3D4
 #define REG_SCREEN_DATA 0x3D5
 
+#define VGA_FB_TYPE_INDEXED 0
+#define VGA_FB_TYPE_RGB     1
+#define VGA_FB_TYPE_EGA_TEXT     2
+
+struct framebuffer_info {
+    uint32_t pitch;
+    uint32_t width;
+    uint32_t height;
+    uint8_t bpp;
+    uint32_t palette_addr;
+    uint16_t palette_num_colors;
+    uint8_t red_field_position;
+    uint8_t red_mask_size;
+    uint8_t green_field_position;
+    uint8_t green_mask_size;
+    uint8_t blue_field_position;
+    uint8_t blue_mask_size;
+};
+typedef struct framebuffer_info framebuffer_info_t;
+
+void vga_init(void *fb_addr, uint8_t type, framebuffer_info_t *fb_info);
+
+void vga_fill_color(uint8_t r, uint8_t g, uint8_t b);
+
 int vga_print_char(char c, int col, int row, char attr);
 
 int vga_handle_scrolling(int cursor_offset);

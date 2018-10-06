@@ -186,7 +186,41 @@ static uint8_t command_cat(const char *path) {
     return 0;
 }
 
-static void print_prompt(unsigned char ret) {
+static int command_exec(const char *path) {
+    if (!_fs_mounted) return 255;
+
+    elf_file_t *file;
+    char path_buf[512];
+    void *text_ptr;
+
+    path_append(path_buf, curr_path, path, sizeof(path_buf));
+    if ((file = elf_open(path_buf)) == NULL) {
+        fprintf(stderr, "Error opening %s: %d\n", path_buf, errno);
+        return 1;
+    }
+
+    elf_section_header_t *text_header = elf_find_section(file, ".text");
+    if ((text_ptr = malloc(text_header->size)) == NULL) {
+        fprintf(stderr, "Failed to allocate memory for %s\n", path_buf);
+        elf_close(file);
+        return ENOMEM;
+    }
+    fseek(file->fd, text_header->offset, SEEK_SET);
+    fread(text_ptr, text_header->size, 1, file->fd);
+    if (ferror(file->fd)) {
+        fprintf(stderr, "Failed reading %s: %d\n", path_buf, errno);
+        elf_close(file);
+        return 2;
+    }
+
+    int ret = ((int (*)(void)) text_ptr)();
+
+    free(text_ptr);
+    elf_close(file);
+    return ret;
+}
+
+static void print_prompt(int ret) {
     if (_fs_mounted) {
         printf("%d %s # ", ret, curr_path);
     } else {
@@ -198,7 +232,7 @@ static void print_prompt(unsigned char ret) {
 static void shell_callback(char *input) {
     printf("\n");
 
-    unsigned char ret = 1;
+    int ret = 1;
     bool save = true;
     if (strcmp(input, "exit") == 0 ||
         strcmp(input, "poweroff") == 0) {
@@ -261,6 +295,10 @@ static void shell_callback(char *input) {
         ret = command_objdump(input + 8);
     } else if (strncmp(input, "cat ", 4) == 0) {
         ret = command_cat(input + 4);
+    } else if (strncmp(input, "./", 2) == 0) {
+        ret = command_exec(input + 2);
+    } else {
+        fprintf(stderr, "Command not found: %s\n", input);
     }
     print_prompt(ret);
 

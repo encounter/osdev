@@ -10,7 +10,7 @@
 #include "fatfs/ff.h"
 
 #ifdef ENABLE_DWARF
-#include "debug/dwarf.h"
+#include "dwarf.h"
 #endif
 
 #include <common.h>
@@ -18,7 +18,7 @@
 
 // #define KDEBUG
 
-extern bool vc_vector_run_tests();
+extern void *load_page_table();
 
 _noreturn _unused
 void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {

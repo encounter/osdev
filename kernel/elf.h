@@ -44,11 +44,11 @@ static_assert(sizeof(elf_machine_type_t) == sizeof(uint16_t),
               "elf_machine_type incorrect size");
 
 enum elf_obj_type {
-    ELF_ET_NONE = 0,
-    ELF_ET_REL = 1,
-    ELF_ET_EXEC = 2,
-    ELF_ET_DYN = 3,
-    ELF_ET_CORE = 4,
+    ELF_ET_NONE = 0, // No file type
+    ELF_ET_REL = 1, // Relocatable file
+    ELF_ET_EXEC = 2, // Executable file
+    ELF_ET_DYN = 3, // Shared object file (& PIE executables)
+    ELF_ET_CORE = 4, // Core file
     ELF_ET_LOPROC = 0xFF00,
     ELF_ET_HIPROC = 0xFFFF
 };
@@ -83,22 +83,22 @@ static_assert(sizeof(elf_header_t) == 52,
               "elf_header incorrect size");
 
 enum elf_section_header_type {
-    ELF_SHT_NULL = 0,
-    ELF_SHT_PROGBITS = 1,
-    ELF_SHT_SYMTAB = 2,
-    ELF_SHT_STRTAB = 3,
-    ELF_SHT_RELA = 4,
-    ELF_SHT_HASH = 5,
-    ELF_SHT_DYNAMIC = 6,
-    ELF_SHT_NOTE = 7,
-    ELF_SHT_NOBITS = 8,
-    ELF_SHT_REL = 9,
-    ELF_SHT_SHLIB = 10,
-    ELF_SHT_DYNSYM = 11,
+    ELF_SHT_NULL = 0, // Unused
+    ELF_SHT_PROGBITS = 1, // Program bits
+    ELF_SHT_SYMTAB = 2, // Symbol table
+    ELF_SHT_STRTAB = 3, // String table
+    ELF_SHT_RELA = 4, // Relocation entries w/ explicit addends
+    ELF_SHT_HASH = 5, // Symbol hash table
+    ELF_SHT_DYNAMIC = 6, // Dynamic linking information
+    ELF_SHT_NOTE = 7, // Auxiliary information
+    ELF_SHT_NOBITS = 8, // Program bits with zero size in file
+    ELF_SHT_REL = 9, // Relocation entries w/o explicit addends
+    ELF_SHT_SHLIB = 10, // Reserved
+    ELF_SHT_DYNSYM = 11, // Dynamic symbol table
     ELF_SHT_LOPROC = 0x70000000,
     ELF_SHT_HIPROC = 0x7FFFFFFF,
     ELF_SHT_LOUSER = 0x80000000,
-    ELF_SHT_HIUSER = 0xFFFFFFFF
+    ELF_SHT_HIUSER = 0xFFFFFFFF,
 };
 typedef enum elf_section_header_type elf_section_header_type_t;
 
@@ -121,6 +121,31 @@ typedef struct elf_section_header elf_section_header_t;
 
 //static_assert(sizeof(elf_section_header_t) == 32,
 //              "elf_section_header incorrect size");
+
+enum elf_program_header_type {
+    ELF_PT_NULL = 0, // Unused
+    ELF_PT_LOAD = 1, // Loadable segment
+    ELF_PT_DYNAMIC = 2, // Dynamic linking information
+    ELF_PT_INTERP = 3, // Interpreter
+    ELF_PT_NOTE = 4, // Auxiliary information
+    ELF_PT_SHLIB = 5, // Reserved
+    ELF_PT_PHDR = 6, // Program header table
+    ELF_PT_LOPROC = 0x70000000,
+    ELF_PT_HIPROC = 0x7FFFFFFF
+};
+typedef enum elf_program_header_type elf_program_header_type_t;
+
+struct _packed elf_program_header {
+    elf_program_header_type_t type;
+    uint32_t offset; // Offset from start of file
+    uint32_t vaddr; // Virtual address
+    uint32_t paddr; // Physical address (ignored?)
+    uint32_t file_size; // Size in file
+    uint32_t memory_size; // Size in memory
+    uint32_t flags; // ?
+    uint32_t align; // Memory alignment
+};
+typedef struct elf_program_header elf_program_header_t;
 
 struct elf_file {
     FILE *fd;

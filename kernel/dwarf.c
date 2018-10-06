@@ -4,18 +4,16 @@
 #include <stdio.h>
 #include <errno.h>
 #include "dwarf.h"
-#include "../elf.h"
-#include "../console.h"
-
-#define KERNEL_BASE 0xC0100000
+#include "elf.h"
+#include "console.h"
 
 void dwarf_find_file(uintptr_t address) {
-    FILE *file;
+//    FILE *file;
 }
 
 void *dwarf_find_debug_info() {
     void *debug_line_ptr = NULL;
-    uint32_t read = 0;
+//    uint32_t read = 0;
 
     elf_file_t *elf_file;
     if ((elf_file = elf_open("kernel.bin")) == NULL) goto fail;

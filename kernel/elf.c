@@ -172,6 +172,17 @@ static const char *elf_section_type(elf_section_header_type_t type) {
     }
 }
 
+static const char *elf_obj_type(elf_obj_type_t type) {
+    switch (type) {
+        case ELF_ET_NONE: return "None";
+        case ELF_ET_REL: return "Relocatable";
+        case ELF_ET_EXEC: return "Executable";
+        case ELF_ET_DYN: return "Dynamic";
+        case ELF_ET_CORE: return "Core";
+        default: return "UNKNOWN";
+    }
+}
+
 void elf_print_sections(elf_file_t *file) {
     if (!_elf_read_header(file)
         || !_elf_read_section_header_table(file)
@@ -179,13 +190,17 @@ void elf_print_sections(elf_file_t *file) {
         return;
 
     elf_header_t *header = file->header;
+    printf("ELF type: %s\n", elf_obj_type(header->obj_type));
+    printf("ELF entry offset: %Xh\n", header->program_entry_offset);
+
     uint16_t num_entries = header->section_header_num_entries;
     for (uint16_t i = 0; i < num_entries; ++i) {
         elf_section_header_t *section_header = (void *) file->sht_start + header->section_header_entry_size * i;
         if (section_header->type == ELF_SHT_NULL) continue; // Skip null header
-        printf("Section %03d %s: offset "PRIx32", size "PRIx32", type %s\n",
+        printf("Section %03d %s: offset "PRIx32", size "PRIx32", VMA "PRIXUPTR", type %s\n",
                i, file->sht_str_section + section_header->name,
                section_header->offset, section_header->size,
+               section_header->address,
                elf_section_type(section_header->type));
     }
 }

@@ -32,7 +32,9 @@ set(SOURCE_FILES
   multiboot
   div64
   elf
+  dwarf
   stdio_impl
+  arch/x86/mmu
   drivers/ports
   drivers/timer
   drivers/keyboard
@@ -56,6 +58,6 @@ set(SOURCE_FILES
   tests/stdio
   tests/path)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
-  set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan debug/dwarf)
+  set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan)
 endif ()
 add_library(kernel STATIC ${SOURCE_FILES})
