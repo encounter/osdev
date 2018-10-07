@@ -14,7 +14,7 @@
 #define VGA_FB_TYPE_RGB     1
 #define VGA_FB_TYPE_EGA_TEXT     2
 
-struct framebuffer_info {
+typedef struct framebuffer_info {
     uint32_t pitch;
     uint32_t width;
     uint32_t height;
@@ -27,25 +27,25 @@ struct framebuffer_info {
     uint8_t green_mask_size;
     uint8_t blue_field_position;
     uint8_t blue_mask_size;
-};
-typedef struct framebuffer_info framebuffer_info_t;
+} framebuffer_info_t;
 
-struct vga_color {
+typedef struct vga_rgb_color {
     uint8_t red;
     uint8_t green;
     uint8_t blue;
-};
-typedef struct vga_color vga_color_t;
+} vga_rgb_color_t;
 
 void vga_init(void *fb_addr, uint8_t type, framebuffer_info_t *fb_info);
 
-void vga_fill_rect(int x1, int y1, int x2, int y2, vga_color_t *color);
+int vga_load_font(const char *filename);
 
-void vga_display_image_bgr(int x, int y, BITMAPINFOHEADER *header, uint8_t *image);
+void vga_fill_rect(int x1, int y1, int x2, int y2, vga_rgb_color_t *color);
+
+void vga_display_image_bgra(int x, int y, bmp_info_header_t *header, uint8_t *image);
 
 // --- Console
 
-int vga_print_char(char c, int col, int row, char attr);
+int vga_print_char(char c, int offset, char attr);
 
 int vga_handle_scrolling(int cursor_offset);
 

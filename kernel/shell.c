@@ -1,24 +1,26 @@
 #include "shell.h"
+#include "bmp.h"
 #include "console.h"
 #include "drivers/acpi.h"
+#include "drivers/ata.h"
 #include "drivers/keyboard.h"
-#include "drivers/ports.h"
-#include "drivers/serial.h"
-#include "tests/tests.h"
 #include "drivers/pci.h"
 #include "drivers/pci_registry.h"
-#include "drivers/ata.h"
+#include "drivers/ports.h"
+#include "drivers/serial.h"
+#include "drivers/vga.h"
 #include "elf.h"
+#include "tests/tests.h"
 
 // FIXME
 #include "fatfs/ff.h"
 
-#include <string.h>
+#include <errno.h>
 #include <malloc.h>
-#include <vector.h>
 #include <math.h>
 #include <stdio.h>
-#include <errno.h>
+#include <string.h>
+#include <vector.h>
 
 #define KEY_BUFFER_INITIAL_SIZE 0x100
 static char *key_buffer;
@@ -220,6 +222,32 @@ static int command_exec(const char *path) {
     return ret;
 }
 
+static int command_display(const char* path) {
+    if (!_fs_mounted) return 255;
+
+    char path_buf[512];
+    path_append(path_buf, curr_path, path, sizeof(path_buf));
+
+    bmp_info_header_t header;
+    uint8_t *bmp = bmp_read_image(path_buf, &header);
+    if (bmp == NULL) {
+        fprintf(stderr, "Failed to read bitmap");
+        return 1;
+    } else {
+        vga_display_image_bgra(0, 0, &header, bmp);
+    }
+    free(bmp);
+
+    return 0;
+}
+
+static int command_font(const char *path) {
+    if (!_fs_mounted) return 255;
+    char path_buf[512];
+    path_append(path_buf, curr_path, path, sizeof(path_buf));
+    return vga_load_font(path_buf) ? 1 : 0;
+}
+
 static void print_prompt(int ret) {
     if (_fs_mounted) {
         printf("%d %s # ", ret, curr_path);
@@ -295,6 +323,10 @@ static void shell_callback(char *input) {
         ret = command_objdump(input + 8);
     } else if (strncmp(input, "cat ", 4) == 0) {
         ret = command_cat(input + 4);
+    } else if (strncmp(input, "display ", 8) == 0) {
+        ret = command_display(input + 8);
+    } else if (strncmp(input, "font ", 5) == 0) {
+        ret = command_font(input + 5);
     } else if (strncmp(input, "./", 2) == 0) {
         ret = command_exec(input + 2);
     } else {

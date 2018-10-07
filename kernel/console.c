@@ -31,14 +31,9 @@ void console_set_serial_enabled(bool enabled) {
  */
 static void knprint(const char *str, size_t len, uint8_t vga_color) {
     if (vga_enabled) {
-        int offset = vga_get_cursor_offset();
-        int row = vga_get_offset_row(offset);
-        int col = vga_get_offset_col(offset);
-
+        int offset = -1;
         for (size_t i = 0; i < len; ++i) {
-            offset = vga_print_char(str[i], col, row, vga_color);
-            row = vga_get_offset_row(offset);
-            col = vga_get_offset_col(offset);
+            offset = vga_print_char(str[i], offset, vga_color);
         }
     }
 

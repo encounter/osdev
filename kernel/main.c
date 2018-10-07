@@ -8,13 +8,12 @@
 #include "drivers/pci.h"
 #include "drivers/ata.h"
 #include "fatfs/ff.h"
-
-#ifdef ENABLE_DWARF
-#include "dwarf.h"
 #include "bmp.h"
 #include "drivers/vga.h"
 #include "arch/x86/mmu.h"
 
+#ifdef ENABLE_DWARF
+#include "dwarf.h"
 #endif
 
 #include <common.h>
@@ -51,18 +50,14 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
 //    dwarf_find_debug_info();
 #endif
 
-    console_set_vga_enabled(vga_enabled);
+    if (vga_enabled && !vga_load_font("assets/default8x16.psfu")) {
+        console_set_vga_enabled(vga_enabled);
+    }
     clear_screen();
 
+    // FIXME add to malloc
     page_table_set(0x400000, 0xC0400000, 0x83);
-    BITMAPINFOHEADER bmpHeader;
-    uint8_t *bmp = LoadBitmapFile("assets/test.bmp", &bmpHeader);
-    if (bmp == NULL) {
-        fprintf(stderr, "Failed to read bitmap");
-    } else {
-        printf("Displaying image...\n");
-        vga_display_image_bgr(0, 0, &bmpHeader, bmp);
-    }
+    page_table_set(0x800000, 0xC0800000, 0x83);
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");

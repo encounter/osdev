@@ -35,6 +35,7 @@ set(SOURCE_FILES
   dwarf
   stdio_impl
   bmp
+  psf
   arch/x86/mmu
   drivers/ports
   drivers/timer

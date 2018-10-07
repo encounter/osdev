@@ -123,13 +123,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
                 break;
 
             case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-                vga_fill_rect(0, 0, 100, 100, &(vga_color_t) {255, 255, 255});
-                vga_fill_rect(100, 0, 200, 100, &(vga_color_t) {255, 0, 0});
-                vga_fill_rect(200, 0, 300, 100, &(vga_color_t) {0, 255, 0});
-                vga_fill_rect(300, 0, 400, 100, &(vga_color_t) {0, 0, 255});
-                vga_fill_rect(0, 100, 100, 200, &(vga_color_t) {255, 0, 0});
-                vga_fill_rect(100, 100, 200, 200, &(vga_color_t) {0, 255, 0});
-                vga_fill_rect(200, 100, 300, 200, &(vga_color_t) {255, 255, 255});
+                console_set_vga_enabled(true);
                 break;
 
             default:
