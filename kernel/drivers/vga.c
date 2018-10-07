@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 uint16_t *console_fb_addr = NULL;
 
@@ -19,17 +20,41 @@ void vga_init(void *fb_addr, uint8_t type, framebuffer_info_t *fb_info) {
     }
 }
 
-void vga_fill_color(uint8_t r, uint8_t g, uint8_t b) {
+static inline void vga_set_pixel(int x, int y, uint32_t val) {
+    *(uint32_t *) (rgb_fb_addr + x * 4 + rgb_fb_info.pitch * y) = val;
+}
+
+void vga_fill_rect(int x1, int y1, int x2, int y2, vga_color_t *color) {
     if (rgb_fb_addr == NULL || rgb_fb_info.bpp != 32) return;
 
-    uint32_t color = ((uint32_t) r << rgb_fb_info.red_field_position)
-            | ((uint32_t) g << rgb_fb_info.green_field_position)
-            | ((uint32_t) b << rgb_fb_info.blue_field_position);
+    uint32_t val = ((uint32_t) color->red << rgb_fb_info.red_field_position)
+                     | ((uint32_t) color->green << rgb_fb_info.green_field_position)
+                     | ((uint32_t) color->blue << rgb_fb_info.blue_field_position);
 
-    for (int i = 0; i < rgb_fb_info.width / 2 && i < rgb_fb_info.height / 2; i++) {
-        uint32_t *pixel = rgb_fb_addr + rgb_fb_info.pitch * i;
-        printf("Setting pixel %Xh to %Xh\n", (uintptr_t) pixel, color);
-        *pixel = color;
+    int xmin = MAX(MIN(x1, x2), 0);
+    int xmax = MIN(MAX(x1, x2), rgb_fb_info.width);
+    int ymin = MAX(MIN(y1, y2), 0);
+    int ymax = MIN(MAX(y1, y2), rgb_fb_info.height);
+    for (int y = ymin; y < ymax; y++) {
+        for (int x = xmin; x < xmax; x++) {
+            vga_set_pixel(x, y, val);
+        }
+    }
+}
+
+void vga_display_image_bgr(int x, int y, BITMAPINFOHEADER *header, uint8_t *image) {
+    if (rgb_fb_addr == NULL || rgb_fb_info.bpp != 32) return;
+
+    int xmax = MIN(x + header->biWidth, rgb_fb_info.width);
+    int ymax = MIN(y + header->biHeight, rgb_fb_info.height);
+    for (int y1 = y; y1 < ymax; y1++) {
+        for (int x1 = x; x1 < xmax; x1++) {
+            uint8_t *pixel = image + (x1 * y1 * 4); // (header->biHeight - y1)
+            uint32_t val = (uint32_t) *(pixel) << rgb_fb_info.blue_field_position
+                           | (uint32_t) *(pixel + 1) << rgb_fb_info.green_field_position
+                           | (uint32_t) *(pixel + 2) << rgb_fb_info.red_field_position;
+            vga_set_pixel(x1, y1, val);
+        }
     }
 }
 

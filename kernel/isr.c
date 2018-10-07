@@ -11,7 +11,8 @@ void register_interrupt_handler(uint8_t n, isr_t handler) {
 
 _unused
 void isr_handler(registers_t regs) {
-    panic("Received interrupt: %lu (err: %Xh) @ %P\n", regs.int_no, regs.err_code, (uintptr_t) regs.eip);
+    panic("Received interrupt: %lu (err: %Xh, CR2 %Xh) @ %P\n",
+          regs.int_no, regs.err_code, regs.cr2, (uintptr_t) regs.eip);
 }
 
 _unused

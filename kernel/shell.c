@@ -299,6 +299,7 @@ static void shell_callback(char *input) {
         ret = command_exec(input + 2);
     } else {
         fprintf(stderr, "Command not found: %s\n", input);
+        save = false;
     }
     print_prompt(ret);
 

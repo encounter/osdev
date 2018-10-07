@@ -24,4 +24,4 @@
 
 void *kernel_page_offset(void *ptr);
 
-void page_table_set(uintptr_t address, uint32_t val);
+void page_table_set(uintptr_t address, uintptr_t page_addr, uint16_t flags);

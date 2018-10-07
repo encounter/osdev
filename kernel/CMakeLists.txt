@@ -34,6 +34,7 @@ set(SOURCE_FILES
   elf
   dwarf
   stdio_impl
+  bmp
   arch/x86/mmu
   drivers/ports
   drivers/timer

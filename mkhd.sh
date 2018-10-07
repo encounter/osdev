@@ -10,6 +10,7 @@ if [ "$(uname)" == "Darwin" ]; then
     cp "$1/kernel.bin" tmp/kernel.bin
     cp "README" tmp/README
     gfind "$1/bin" -type f -executable -exec cp {} tmp/bin \;
+    cp -R assets "tmp/"
 
     hdiutil create -size 10m -fs exfat -srcfolder tmp hd
     qemu-img convert hd.dmg -O qcow2 hd.img
@@ -23,6 +24,7 @@ else
     cp "$1/kernel.bin" "$MPAT/kernel.bin"
     cp "README" "$MPAT/README"
     find "$1/bin" -type f -executable -exec cp {} "$MPAT/bin" \;
+    cp -R assets "$MPAT/"
     sync
     udisksctl unmount -b "$LDEV"
     udisksctl loop-delete -b "$LDEV"

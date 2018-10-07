@@ -100,7 +100,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         printf("framebuffer_addr = "PRIXUPTR64", type = %d, bpp = %d\n",
                info->framebuffer_addr, info->framebuffer_type, info->framebuffer_bpp);
         uintptr_t fbaddr = (uintptr_t) info->framebuffer_addr;
-        page_table_set(fbaddr, 0x83); // Add framebuffer to page table
+        page_table_set(fbaddr, fbaddr, 0x83); // Add framebuffer to page table
 
         vga_init((void *) fbaddr, info->framebuffer_type, &(framebuffer_info_t) {
             .pitch = info->framebuffer_pitch,
@@ -123,7 +123,13 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
                 break;
 
             case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-                vga_fill_color(255, 255, 255);
+                vga_fill_rect(0, 0, 100, 100, &(vga_color_t) {255, 255, 255});
+                vga_fill_rect(100, 0, 200, 100, &(vga_color_t) {255, 0, 0});
+                vga_fill_rect(200, 0, 300, 100, &(vga_color_t) {0, 255, 0});
+                vga_fill_rect(300, 0, 400, 100, &(vga_color_t) {0, 0, 255});
+                vga_fill_rect(0, 100, 100, 200, &(vga_color_t) {255, 0, 0});
+                vga_fill_rect(100, 100, 200, 200, &(vga_color_t) {0, 255, 0});
+                vga_fill_rect(200, 100, 300, 200, &(vga_color_t) {255, 255, 255});
                 break;
 
             default:

@@ -9,10 +9,10 @@ void *load_page_table() {
     return (uint32_t *) ((uintptr_t) raw_ptr + KERNEL_PAGE_OFFSET);
 }
 
-void page_table_set(uintptr_t address, uint32_t val) {
+void page_table_set(uintptr_t address, uintptr_t page_addr, uint16_t flags) {
     uint32_t *page_table = load_page_table();
-    uint16_t i = (uint16_t) (address >> 22);
-    page_table[i] = val;
+    uint16_t i = (uint16_t) (page_addr >> 22);
+    page_table[i] = (address & 0xFFC00000) | flags;
     __asm__ volatile("invlpg %0" : : "m"(i));
 }
 

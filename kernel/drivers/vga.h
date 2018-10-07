@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../../libc/common.h"
+#include <common.h>
+#include "../bmp.h"
 
 #define MAX_ROWS 25
 #define MAX_COLS 80
@@ -29,9 +30,20 @@ struct framebuffer_info {
 };
 typedef struct framebuffer_info framebuffer_info_t;
 
+struct vga_color {
+    uint8_t red;
+    uint8_t green;
+    uint8_t blue;
+};
+typedef struct vga_color vga_color_t;
+
 void vga_init(void *fb_addr, uint8_t type, framebuffer_info_t *fb_info);
 
-void vga_fill_color(uint8_t r, uint8_t g, uint8_t b);
+void vga_fill_rect(int x1, int y1, int x2, int y2, vga_color_t *color);
+
+void vga_display_image_bgr(int x, int y, BITMAPINFOHEADER *header, uint8_t *image);
+
+// --- Console
 
 int vga_print_char(char c, int col, int row, char attr);
 
@@ -43,7 +55,7 @@ void vga_set_cursor_offset(int offset);
 
 void vga_clear_screen();
 
-enum vga_color {
+enum vga_text_color {
     VGA_COLOR_BLACK = 0,
     VGA_COLOR_BLUE = 1,
     VGA_COLOR_GREEN = 2,
@@ -61,8 +73,9 @@ enum vga_color {
     VGA_COLOR_LIGHT_BROWN = 14,
     VGA_COLOR_WHITE = 15,
 };
+typedef enum vga_text_color vga_text_color_t;
 
-static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
+static inline uint8_t vga_entry_color(vga_text_color_t fg, vga_text_color_t bg) {
     return fg | bg << 4;
 }
 

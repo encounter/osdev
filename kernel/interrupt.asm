@@ -90,6 +90,9 @@ isr_common_stub:
    sub     esp,    4
    stmxcsr [esp]
 
+   mov eax, cr2
+   push eax ; Save CR2
+
    mov ax, ds               ; Lower 16-bits of eax = ds.
    push eax                 ; save the data segment descriptor
 
@@ -106,6 +109,8 @@ isr_common_stub:
    ;mov es, ax
    ;mov fs, ax
    ;mov gs, ax
+
+   pop eax ; pop cr2
 
    ; Restore the MXCSR register.
    ldmxcsr [esp]
@@ -126,6 +131,9 @@ irq_common_stub:
    sub     esp,    4
    stmxcsr [esp]
 
+   mov eax, cr2
+   push eax ; Save CR2
+
    mov ax, ds               ; Lower 16-bits of eax = ds.
    push eax                 ; save the data segment descriptor
 
@@ -142,6 +150,8 @@ irq_common_stub:
    ;mov es, bx
    ;mov fs, bx
    ;mov gs, bx
+
+   pop eax ; pop cr2
 
    ; Restore the MXCSR register.
    ldmxcsr [esp]

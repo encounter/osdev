@@ -11,14 +11,16 @@
 
 #ifdef ENABLE_DWARF
 #include "dwarf.h"
+#include "bmp.h"
+#include "drivers/vga.h"
+#include "arch/x86/mmu.h"
+
 #endif
 
 #include <common.h>
 #include <stdio.h>
 
 // #define KDEBUG
-
-extern void *load_page_table();
 
 _noreturn _unused
 void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
@@ -51,6 +53,16 @@ void kernel_main(uint32_t multiboot_magic, void *multiboot_info) {
 
     console_set_vga_enabled(vga_enabled);
     clear_screen();
+
+    page_table_set(0x400000, 0xC0400000, 0x83);
+    BITMAPINFOHEADER bmpHeader;
+    uint8_t *bmp = LoadBitmapFile("assets/test.bmp", &bmpHeader);
+    if (bmp == NULL) {
+        fprintf(stderr, "Failed to read bitmap");
+    } else {
+        printf("Displaying image...\n");
+        vga_display_image_bgr(0, 0, &bmpHeader, bmp);
+    }
 
 #ifdef KDEBUG
     kprint("Initializing timer...\n");
