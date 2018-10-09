@@ -22,6 +22,8 @@
 #define X86_PAGE_AVAIL2    (1<<10)    // Available for usage by the Kernel
 #define X86_PAGE_AVAIL3    (1<<11)    // Available for usage by the Kernel
 
-void *kernel_page_offset(void *ptr);
+void *phys_to_virt(void *ptr);
+
+void *virt_to_phys(void *ptr);
 
 void page_table_set(uintptr_t address, uintptr_t page_addr, uint16_t flags);

@@ -2,8 +2,8 @@
 extern isr_handler
 extern irq_handler
 
-%macro ISR_NOERRCODE 1  ; define a macro, taking one parameter
-  global isr%1        ; %1 accesses the first parameter.
+%macro ISR_NOERRCODE 1
+  global isr%1
   isr%1:
     cli
     push byte 0
@@ -19,8 +19,6 @@ extern irq_handler
     jmp isr_common_stub
 %endmacro
 
-; This macro creates a stub for an IRQ - the first parameter is
-; the IRQ number, the second is the ISR number it is remapped to.
 %macro IRQ 2
   global irq%1
   irq%1:
@@ -80,84 +78,52 @@ IRQ 13, 45
 IRQ 14, 46
 IRQ 15, 47
 
-; This is our common ISR stub. It saves the processor state, sets
-; up for kernel mode segments, calls the C-level fault handler,
-; and finally restores the stack frame.
 isr_common_stub:
-   pusha                    ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+   pusha ; push edi, esi, ebp, esp, ebx, edx, ecx, eax
 
-   ; Preserve the MXCSR register.
-   sub     esp,    4
+   ; push mxcsr
+   sub esp, 4
    stmxcsr [esp]
 
+   ; push cr2
    mov eax, cr2
-   push eax ; Save CR2
-
-   mov ax, ds               ; Lower 16-bits of eax = ds.
-   push eax                 ; save the data segment descriptor
-
-   ;mov ax, 0x10  ; load the kernel data segment descriptor
-   ;mov ds, ax
-   ;mov es, ax
-   ;mov fs, ax
-   ;mov gs, ax
+   push eax
 
    call isr_handler
 
-   pop eax        ; reload the original data segment descriptor
-   ;mov ds, ax
-   ;mov es, ax
-   ;mov fs, ax
-   ;mov gs, ax
+   ; discard cr2
+   add esp, 4
 
-   pop eax ; pop cr2
-
-   ; Restore the MXCSR register.
+   ; restore mxcsr
    ldmxcsr [esp]
-   add     esp,    4
+   add esp, 4
 
-   popa                     ; Pops edi,esi,ebp...
-   add esp, 8     ; Cleans up the pushed error code and pushed ISR number
-   sti
-   iret           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+   popa       ; pop edi, esi, ebp, esp, ebx, edx, ecx, eax
+   add esp, 8 ; discard error code and ISR number
+   sti        ; re-enable interrupts
+   iret       ; restore cs, eip, eflags, ss, esp
 
-; This is our common IRQ stub. It saves the processor state, sets
-; up for kernel mode segments, calls the C-level fault handler,
-; and finally restores the stack frame.
 irq_common_stub:
-   pusha                    ; Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+   pusha ; push edi, esi, ebp, esp, ebx, edx, ecx, eax
 
-   ; Preserve the MXCSR register.
+   ; push mxcsr
    sub     esp,    4
    stmxcsr [esp]
 
+   ; push cr2
    mov eax, cr2
-   push eax ; Save CR2
-
-   mov ax, ds               ; Lower 16-bits of eax = ds.
-   push eax                 ; save the data segment descriptor
-
-   ;mov ax, 0x10  ; load the kernel data segment descriptor
-   ;mov ds, ax
-   ;mov es, ax
-   ;mov fs, ax
-   ;mov gs, ax
+   push eax
 
    call irq_handler
 
-   pop ebx        ; reload the original data segment descriptor
-   ;mov ds, bx
-   ;mov es, bx
-   ;mov fs, bx
-   ;mov gs, bx
+   ; discard cr2
+   add esp, 4
 
-   pop eax ; pop cr2
-
-   ; Restore the MXCSR register.
+   ; restore mxcsr
    ldmxcsr [esp]
    add     esp,    4
 
-   popa                     ; Pops edi,esi,ebp...
-   add esp, 8     ; Cleans up the pushed error code and pushed ISR number
-   sti
-   iret           ; pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+   popa           ; pop edi, esi, ebp, esp, ebx, edx, ecx, eax
+   add esp, 8     ; discard error code and IRQ number
+   sti            ; re-enable interrupts
+   iret           ; restore cs, eip, eflags, ss, esp

@@ -1,7 +1,8 @@
-#include <vector.h>
 #include "pci.h"
 #include "ports.h"
 #include "../console.h"
+
+#include <vector.h>
 
 #define PCI_VENDOR_NONE 0xFFFF
 
@@ -122,6 +123,7 @@ void pci_check_all_buses() {
 void pci_init() {
     pci_devices = vc_vector_create(8, sizeof(pci_device_t), NULL);
     pci_check_all_buses();
+    vc_vector_reserve_count(pci_devices, 0); // Shrink
 }
 
 vc_vector *pci_get_devices() {

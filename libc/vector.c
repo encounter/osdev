@@ -1,7 +1,10 @@
 #include "vector.h"
+#include "math.h"
 
-#include <malloc.h>
 #include <string.h>
+
+// FIXME
+#include "../kernel/kmalloc.h"
 
 #define GROWTH_FACTOR 1.5
 #define DEFAULT_COUNT_OF_ELEMENETS 8
@@ -25,7 +28,7 @@ struct vc_vector {
 
 bool vc_vector_realloc(vc_vector *vector, size_t new_count) {
     const size_t new_size = new_count * vector->element_size;
-    char *new_data = (char *) realloc(vector->data, new_size);
+    char *new_data = (char *) krealloc(vector->data, new_size);
     if (!new_data) {
         return false;
     }
@@ -51,7 +54,7 @@ void vc_vector_call_deleter_all(vc_vector *vector) {
 // Contol
 
 vc_vector *vc_vector_create(size_t count_elements, size_t size_of_element, vc_vector_deleter *deleter) {
-    vc_vector *v = (vc_vector *) malloc(sizeof(vc_vector));
+    vc_vector *v = (vc_vector *) kmalloc(sizeof(vc_vector));
     if (v != NULL) {
         v->data = NULL;
         v->count = 0;
@@ -64,7 +67,7 @@ vc_vector *vc_vector_create(size_t count_elements, size_t size_of_element, vc_ve
 
         if (size_of_element < 1 ||
             !vc_vector_realloc(v, count_elements)) {
-            free(v);
+            kfree(v);
             v = NULL;
         }
     }
@@ -98,10 +101,10 @@ void vc_vector_release(vc_vector *vector) {
     }
 
     if (vector->reserved_size != 0) {
-        free(vector->data);
+        kfree(vector->data);
     }
 
-    free(vector);
+    kfree(vector);
 }
 
 bool vc_vector_is_equals(vc_vector *vector1, vc_vector *vector2) {
@@ -188,6 +191,9 @@ size_t vc_vector_max_size(const vc_vector *vector) {
 bool vc_vector_reserve_count(vc_vector *vector, size_t new_count) {
     if (new_count < vector->count) {
         return false;
+    } else if (!new_count) {
+        // Shrink to fit
+        new_count = MAX(1, vector->count);
     }
 
     size_t new_size = vector->element_size * new_count;

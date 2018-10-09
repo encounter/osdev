@@ -1,11 +1,10 @@
-#include <malloc.h>
-#include <byteswap.h>
-#include <string.h>
+#include "dwarf.h"
+#include "console.h"
+#include "elf.h"
+#include "kmalloc.h"
+
 #include <stdio.h>
 #include <errno.h>
-#include "dwarf.h"
-#include "elf.h"
-#include "console.h"
 
 void dwarf_find_file(uintptr_t address) {
 //    FILE *file;
@@ -44,6 +43,6 @@ void *dwarf_find_debug_info() {
 
     end:
     elf_close(elf_file);
-    free(debug_line_ptr);
+    kfree(debug_line_ptr);
     return NULL;
 }

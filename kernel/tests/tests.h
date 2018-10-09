@@ -9,3 +9,5 @@ bool fatfs_test();
 bool stdio_test();
 
 bool path_test();
+
+bool page_table_test();

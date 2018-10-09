@@ -36,6 +36,7 @@ set(SOURCE_FILES
   stdio_impl
   bmp
   psf
+  kmalloc
   arch/x86/mmu
   drivers/ports
   drivers/timer
@@ -43,7 +44,6 @@ set(SOURCE_FILES
   drivers/acpi
   drivers/serial
   drivers/vga
-  drivers/ahci
   drivers/ata
   drivers/pci
   drivers/pci_registry
@@ -58,7 +58,8 @@ set(SOURCE_FILES
   tests/vector
   tests/fatfs
   tests/stdio
-  tests/path)
+  tests/path
+  tests/pages)
 if (${CMAKE_BUILD_TYPE} MATCHES "Debug")
   set(SOURCE_FILES ${SOURCE_FILES} debug/ubsan)
 endif ()

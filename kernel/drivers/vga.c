@@ -1,13 +1,13 @@
 #include "vga.h"
 #include "ports.h"
-#include "../psf.h"
 #include "../console.h"
+#include "../kmalloc.h"
+#include "../psf.h"
 
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <errno.h>
-#include <malloc.h>
 
 // EGA text console
 uint16_t *console_fb_addr = NULL;
@@ -44,6 +44,8 @@ void vga_init(void *fb_addr, uint8_t type, framebuffer_info_t *fb_info) {
 }
 
 int vga_load_font(const char *filename) {
+    if (rgb_fb_addr == NULL) return 1;
+
     int prev_width = 0, prev_height = 0;
     void *old_glyphs = rgb_console_font_glyphs;
     if (old_glyphs != NULL) {
@@ -55,18 +57,19 @@ int vga_load_font(const char *filename) {
     if (rgb_console_font_glyphs == NULL) {
         rgb_console_font_glyphs = old_glyphs;
         fprintf(stderr, "Failed to read font %s (err: %d)\n", filename, errno);
-        return -1;
+        return 2;
     }
-    free(old_glyphs);
+    kfree(old_glyphs);
 
     rgb_console_cols = rgb_fb_info.width / rgb_console_font.width;
     rgb_console_rows = rgb_fb_info.height / rgb_console_font.height;
 
     size_t buffer_size = rgb_console_rows * rgb_console_cols * sizeof(rgb_console_buffer_entry_t);
-    rgb_console_buffer_entry_t *new_buffer = malloc(buffer_size);
+    rgb_console_buffer_entry_t *new_buffer = kmalloc(buffer_size);
     if (new_buffer == NULL) {
+        errno = ENOMEM;
         fprintf(stderr, "Failed to allocate memory for console buffer.\n");
-        return -1;
+        return 1;
     }
     memset(new_buffer, 0, buffer_size);
 
@@ -84,7 +87,7 @@ int vga_load_font(const char *filename) {
             memcpy(new_buffer, rgb_console_buffer, prev_size);
             memset((void *) new_buffer + prev_size, 0, buffer_size - prev_size);
         }
-        free(rgb_console_buffer);
+        kfree(rgb_console_buffer);
     }
     rgb_console_buffer = new_buffer;
     vga_console_repaint();
@@ -209,6 +212,7 @@ int vga_print_char(char c, int offset, char attr) {
 
 int vga_get_cursor_offset() {
     if (console_fb_addr == NULL) return 0;
+
     port_byte_out(REG_SCREEN_CTRL, 14);
     int offset = port_byte_in(REG_SCREEN_DATA) << 8; /* High byte: << 8 */
     port_byte_out(REG_SCREEN_CTRL, 15);
@@ -218,6 +222,7 @@ int vga_get_cursor_offset() {
 
 void vga_set_cursor_offset(int offset) {
     if (console_fb_addr == NULL) return;
+
     port_byte_out(REG_SCREEN_CTRL, 14);
     port_byte_out(REG_SCREEN_DATA, (unsigned char) (offset >> 8));
     port_byte_out(REG_SCREEN_CTRL, 15);

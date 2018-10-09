@@ -37,9 +37,7 @@
 #define		I86_PIC_OCW2_MASK_ROTATE	0x80		//10000000	//Rotation command
 
 typedef struct registers {
-    uint32_t ds; // Data segment selector
-    uint32_t cr2; // More error shit
-    uint32_t mxcsr; // SSE reg
+    uint32_t cr2, mxcsr;
     uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
     uint32_t int_no, err_code; // Interrupt number and error code (if applicable)
     uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.

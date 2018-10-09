@@ -1,6 +1,8 @@
 #include "shell.h"
 #include "bmp.h"
 #include "console.h"
+#include "elf.h"
+#include "kmalloc.h"
 #include "drivers/acpi.h"
 #include "drivers/ata.h"
 #include "drivers/keyboard.h"
@@ -9,14 +11,12 @@
 #include "drivers/ports.h"
 #include "drivers/serial.h"
 #include "drivers/vga.h"
-#include "elf.h"
 #include "tests/tests.h"
 
 // FIXME
 #include "fatfs/ff.h"
 
 #include <errno.h>
-#include <malloc.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -202,7 +202,7 @@ static int command_exec(const char *path) {
     }
 
     elf_section_header_t *text_header = elf_find_section(file, ".text");
-    if ((text_ptr = malloc(text_header->size)) == NULL) {
+    if ((text_ptr = kmalloc(text_header->size)) == NULL) {
         fprintf(stderr, "Failed to allocate memory for %s\n", path_buf);
         elf_close(file);
         return ENOMEM;
@@ -217,7 +217,7 @@ static int command_exec(const char *path) {
 
     int ret = ((int (*)(void)) text_ptr)();
 
-    free(text_ptr);
+    kfree(text_ptr);
     elf_close(file);
     return ret;
 }
@@ -236,7 +236,7 @@ static int command_display(const char* path) {
     } else {
         vga_display_image_bgra(0, 0, &header, bmp);
     }
-    free(bmp);
+    kfree(bmp);
 
     return 0;
 }
@@ -300,9 +300,11 @@ static void shell_callback(char *input) {
         ret = (unsigned char) !stdio_test();
     } else if (strcmp(input, "test path") == 0) {
         ret = (unsigned char) !path_test();
+    } else if (strcmp(input, "test pages") == 0) {
+        ret = (unsigned char) !page_table_test();
     } else if (strcmp(input, "test") == 0 ||
                strncmp(input, "test ", 5) == 0) {
-        printf("Available tests:\n  vector\n  fatfs\n  stdio\n  path\n");
+        printf("Available tests:\n  vector\n  fatfs\n  stdio\n  path\n  pages\n");
     } else if (strcmp(input, "lspci") == 0) {
         command_lspci();
         ret = 0;
@@ -342,7 +344,7 @@ static void shell_callback(char *input) {
 }
 
 static void shell_history_free_func(void *data) {
-    free(*(char **) data);
+    kfree(*(char **) data);
 }
 
 void shell_init(bool fs_mounted) {
@@ -390,10 +392,10 @@ void shell_handle_down() {
 
 bool key_buffer_append(const char c) {
     if (key_buffer == NULL) {
-        key_buffer = malloc(key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
+        key_buffer = kmalloc(key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
         if (key_buffer == NULL) return false;
     } else if (key_buffer_size <= key_buffer_used + 1) {
-        key_buffer = realloc(key_buffer, key_buffer_size += KEY_BUFFER_INITIAL_SIZE);
+        key_buffer = krealloc(key_buffer, key_buffer_size += KEY_BUFFER_INITIAL_SIZE);
         if (key_buffer == NULL) return false;
     }
 
@@ -415,7 +417,7 @@ void key_buffer_clear() {
 
     // Shrink key_buffer if it expanded
     if (key_buffer_size > KEY_BUFFER_INITIAL_SIZE) {
-        key_buffer = realloc(key_buffer, key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
+        key_buffer = krealloc(key_buffer, key_buffer_size = KEY_BUFFER_INITIAL_SIZE);
     }
 }
 
@@ -424,7 +426,7 @@ void key_buffer_set(char *input) {
         printf("\b \b");
     }
     key_buffer_used = strlen(input);
-    key_buffer = realloc(key_buffer, MAX(key_buffer_used + 1, KEY_BUFFER_INITIAL_SIZE));
+    key_buffer = krealloc(key_buffer, MAX(key_buffer_used + 1, KEY_BUFFER_INITIAL_SIZE));
     if (key_buffer == NULL) return; // return error of some sort?
     strncpy(key_buffer, input, key_buffer_used + 1);
     key_buffer_printed = 0;

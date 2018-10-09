@@ -2,7 +2,9 @@
 #include <string.h>
 #include <errno.h>
 #include <limits.h>
-#include <malloc.h>
+
+// FIXME
+#include "../kernel/kmalloc.h"
 
 int __towrite(FILE *f) {
     f->mode |= f->mode - 1;
@@ -83,7 +85,7 @@ int fclose(FILE *f) {
     r |= f->close(f);
 
     // free(f->getln_buf); FIXME not implemented
-    if (!perm) free(f);
+    if (!perm) kfree(f);
 
     return r;
 }

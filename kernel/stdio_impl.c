@@ -1,8 +1,9 @@
 #include <stdio.h>
-#include <malloc.h>
 #include <string.h>
 #include <errno.h>
 #include <math.h>
+
+#include "kmalloc.h"
 
 #include "fatfs/ff.h"
 
@@ -49,7 +50,7 @@ int __fatfs_to_stderr(FRESULT ret) {
 FILE *__fatfs_open(FILE *f, const char *filename, const char *m) {
     FRESULT ret;
 
-    f->cookie = malloc(sizeof(FIL));
+    f->cookie = kmalloc(sizeof(FIL));
     if (f->cookie == NULL) {
         errno = ENOMEM;
         f->flags |= F_ERR;
@@ -148,7 +149,7 @@ int __fatfs_close(FILE *f) {
         f->flags |= F_ERR;
         return EOF;
     }
-    free(f->cookie);
+    kfree(f->cookie);
     return 0;
 }
 
@@ -161,7 +162,7 @@ FILE *fopen(const char *filename, const char *mode) {
         return NULL;
     }
 
-    if (!(f = malloc(sizeof(FILE) + UNGET + BUFSIZ))) {
+    if (!(f = kmalloc(sizeof(FILE) + UNGET + BUFSIZ))) {
         errno = ENOMEM;
         return NULL;
     }

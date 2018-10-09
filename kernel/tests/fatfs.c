@@ -1,7 +1,7 @@
 #include "../fatfs/ff.h"
+#include "../kmalloc.h"
 
 #include <common.h>
-#include <malloc.h>
 #include <stdio.h>
 
 bool fatfs_test() {
@@ -25,7 +25,7 @@ bool fatfs_test() {
     if (ret != FR_OK) goto fail;
     printf("OK\n");
 
-    buff = malloc((size_t) info.fsize + 1);
+    buff = kmalloc((size_t) info.fsize + 1);
     if (buff == NULL) goto fail;
 
     ret = f_read(&file, buff, (uint32_t) info.fsize, &read);
@@ -41,7 +41,7 @@ bool fatfs_test() {
     printf("fatfs fail %d\n", ret);
 
     end:
-    free(buff);
+    kfree(buff);
     f_close(&file);
     f_unmount("");
     return ret == FR_OK;

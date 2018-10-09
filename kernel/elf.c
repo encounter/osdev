@@ -1,10 +1,10 @@
 #include "elf.h"
 #include "console.h"
+#include "kmalloc.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
-#include <malloc.h>
 
 // #define ELF_DEBUG
 
@@ -37,13 +37,13 @@ static bool _elf_read_header(elf_file_t *file) {
 
     void *buf = NULL;
     size_t header_size = sizeof(elf_header_t), read = 0;
-    if ((buf = malloc(header_size)) == NULL) {
+    if ((buf = kmalloc(header_size)) == NULL) {
         errno = ENOMEM;
         return false;
     }
     read = fread(buf, header_size, 1, file->fd);
     if (ferror(file->fd) || !read || !_check_elf_header(buf)) {
-        free(buf);
+        kfree(buf);
         return false;
     }
 
@@ -63,13 +63,13 @@ static bool _elf_read_section_header_table(elf_file_t *file) {
     void *buf = NULL;
     uint16_t sh_table_size = header->section_header_entry_size *
                              header->section_header_num_entries;
-    if ((buf = malloc(sh_table_size)) == NULL) {
+    if ((buf = kmalloc(sh_table_size)) == NULL) {
         errno = ENOMEM;
         return false;
     }
     read = fread(buf, sh_table_size, 1, file->fd);
     if (ferror(file->fd) || !read) {
-        free(buf);
+        kfree(buf);
         return false;
     }
 
@@ -121,12 +121,12 @@ void *elf_read_section(elf_file_t *file, elf_section_header_t *section_header) {
 
     void *buf = NULL;
     uint16_t section_size = (uint16_t) section_header->size;
-    if ((buf = malloc(section_size)) == NULL) {
+    if ((buf = kmalloc(section_size)) == NULL) {
         errno = ENOMEM;
         return NULL;
     }
     if (!fread(buf, section_size, 1, file->fd) || ferror(file->fd)) {
-        free(buf);
+        kfree(buf);
         return NULL;
     }
 
@@ -206,7 +206,7 @@ void elf_print_sections(elf_file_t *file) {
 }
 
 elf_file_t *elf_open(const char *filename) {
-    elf_file_t *file = malloc(sizeof(elf_file_t));
+    elf_file_t *file = kmalloc(sizeof(elf_file_t));
     if (file == NULL) {
         errno = ENOMEM;
         return NULL;
@@ -227,8 +227,8 @@ elf_file_t *elf_open(const char *filename) {
 void elf_close(elf_file_t *file) {
     if (file == NULL) return;
     if (file->fd != NULL) fclose(file->fd);
-    free(file->header);
-    free(file->sht_start);
-    free(file->sht_str_section);
-    free(file);
+    kfree(file->header);
+    kfree(file->sht_start);
+    kfree(file->sht_str_section);
+    kfree(file);
 }

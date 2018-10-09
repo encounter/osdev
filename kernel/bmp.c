@@ -1,6 +1,7 @@
 #include "bmp.h"
+#include "kmalloc.h"
+
 #include <stdio.h>
-#include <malloc.h>
 #include <errno.h>
 
 uint8_t *bmp_read_image(const char *filename, bmp_info_header_t *bmp_info_header) {
@@ -21,10 +22,10 @@ uint8_t *bmp_read_image(const char *filename, bmp_info_header_t *bmp_info_header
     fread(bmp_info_header, sizeof(bmp_info_header_t), 1, bmp_file);
     fseek(bmp_file, header.img_data_offset, SEEK_SET);
 
-    img_data = malloc(bmp_info_header->img_data_size);
+    img_data = kmalloc(bmp_info_header->img_data_size);
     if (img_data == NULL) {
         errno = ENOMEM;
-        free(img_data);
+        kfree(img_data);
         fclose(bmp_file);
         return NULL;
     }

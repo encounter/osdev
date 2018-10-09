@@ -1,6 +1,7 @@
 #include "psf.h"
+#include "kmalloc.h"
+
 #include <stdio.h>
-#include <malloc.h>
 #include <errno.h>
 
 void *psf_read_font(const char *filename, psf_font_t *out_header) {
@@ -20,7 +21,7 @@ void *psf_read_font(const char *filename, psf_font_t *out_header) {
     }
 
     uint32_t glyphs_size = header.bytes_per_glyph * header.num_glyph;
-    glyphs_data = malloc(glyphs_size);
+    glyphs_data = kmalloc(glyphs_size);
     if (glyphs_data == NULL) {
         errno = ENOMEM;
         fclose(font_file);

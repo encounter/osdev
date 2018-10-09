@@ -1,5 +1,7 @@
+#include "tests.h"
+#include "../kmalloc.h"
+
 #include <common.h>
-#include <malloc.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -34,7 +36,7 @@ static bool fread_test() {
     file = fopen(filename, "r");
     if (ferror(file)) FAIL();
 
-    if ((buff = malloc((size_t) st.st_size + 1)) == NULL) FAIL();
+    if ((buff = kmalloc((size_t) st.st_size + 1)) == NULL) FAIL();
     size_t read = fread(buff, (uint32_t) st.st_size, 1, file);
     if (ferror(file) || !read) FAIL();
 
@@ -50,7 +52,7 @@ static bool fread_test() {
 
     end:
     if (file != NULL) fclose(file);
-    free(buff);
+    kfree(buff);
     return ret;
 }
 
@@ -68,7 +70,7 @@ static bool fwrite_test() {
     file = fopen(filename, "r+");
     if (ferror(file)) FAIL();
 
-    if ((rbuff = malloc((size_t) st.st_size + 1)) == NULL) FAIL();
+    if ((rbuff = kmalloc((size_t) st.st_size + 1)) == NULL) FAIL();
     if (!fread(rbuff, (uint32_t) st.st_size, 1, file) || ferror(file)) FAIL();
     if (fseek(file, 0, SEEK_SET) || ferror(file)) FAIL();
     if (!fwrite(test_str, sizeof(test_str) - 1, 1, file) || ferror(file)) FAIL();
@@ -78,7 +80,7 @@ static bool fwrite_test() {
     printf("Re-open %s for updating... %lli\n", filename, st.st_size);
     file = fopen(filename, "r+");
     if (ferror(file)) FAIL();
-    if ((wbuff = malloc(sizeof(test_str))) == NULL) FAIL();
+    if ((wbuff = kmalloc(sizeof(test_str))) == NULL) FAIL();
     if (fseek(file, 0, SEEK_SET) || ferror(file)) FAIL();
     if (!fread(wbuff, sizeof(test_str), 1, file) || ferror(file)) FAIL();
     if (strncmp(wbuff, test_str, sizeof(test_str) - 1) != 0) FAIL();
@@ -97,8 +99,8 @@ static bool fwrite_test() {
         fflush(file);
         fclose(file);
     }
-    free(rbuff);
-    free(wbuff);
+    kfree(rbuff);
+    kfree(wbuff);
     return ret;
 }
 

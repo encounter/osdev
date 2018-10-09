@@ -16,7 +16,12 @@ void page_table_set(uintptr_t address, uintptr_t page_addr, uint16_t flags) {
     __asm__ volatile("invlpg %0" : : "m"(i));
 }
 
-void *kernel_page_offset(void *ptr) {
+void *phys_to_virt(void *ptr) {
     if ((uintptr_t) ptr > KERNEL_PAGE_OFFSET) return ptr;
     return (void *) ((uintptr_t) ptr + KERNEL_PAGE_OFFSET);
+}
+
+void *virt_to_phys(void *ptr) {
+    if ((uintptr_t) ptr < KERNEL_PAGE_OFFSET) return ptr;
+    return (void *) ((uintptr_t) ptr - KERNEL_PAGE_OFFSET);
 }

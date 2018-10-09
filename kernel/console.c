@@ -103,6 +103,20 @@ size_t __stderr_write(FILE *f, const char *str, size_t len) {
     return len;
 }
 
+size_t __serial_write(FILE *f, const char *str, size_t len) {
+    size_t rem = f->wpos - f->wbase;
+    for (size_t i = 0; i < rem; i++) {
+        serial_write(f->wbase[i]);
+    }
+    for (size_t i = 0; i < len; i++) {
+        serial_write(str[i]);
+    }
+
+    f->wend = f->buf + f->buf_size;
+    f->wpos = f->wbase = f->buf;
+    return len;
+}
+
 off_t __stdio_seek(FILE *file, const off_t offset, int origin) {
     return 0; // TODO
 }
@@ -132,6 +146,19 @@ FILE *stderr = &(FILE) {
         .flags = F_PERM | F_NORD,
         .lbf = '\n',
         .write = __stderr_write,
+        .seek = __stdio_seek,
+        .close = __stdio_close,
+        .lock = -1,
+};
+
+static char __serial_buf[BUFSIZ + UNGET];
+FILE *serial = &(FILE) {
+        .buf = __serial_buf + UNGET,
+        .buf_size = BUFSIZ,
+        .fd = 1,
+        .flags = F_PERM | F_NORD,
+        .lbf = '\n',
+        .write = __serial_write,
         .seek = __stdio_seek,
         .close = __stdio_close,
         .lock = -1,

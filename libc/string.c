@@ -2,7 +2,9 @@
 #include "stdio.h"
 
 #include <limits.h>
-#include <malloc.h>
+
+// FIXME
+#include "../kernel/kmalloc.h"
 
 #define _ALIGN (sizeof(size_t))
 #define _ONES ((size_t) - 1 / UCHAR_MAX)
@@ -125,7 +127,7 @@ char *strncpy(char *restrict s1, const char *restrict s2, size_t n) {
 
 char *strdup(const char *str) {
     size_t len = strlen(str) + 1;
-    char *new = malloc(len);
+    char *new = kmalloc(len);
     if (new == NULL) return NULL;
     return memcpy(new, str, len);
 }

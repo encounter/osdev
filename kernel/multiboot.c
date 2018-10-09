@@ -1,9 +1,10 @@
-#include <stdio.h>
-#include <string.h>
 #include "multiboot.h"
 #include "console.h"
 #include "arch/x86/mmu.h"
 #include "drivers/vga.h"
+
+#include <stdio.h>
+#include <string.h>
 
 #define KERNEL_OFFSET 0x200000 // FIXME
 #define BASE_VIDEO_ADDRESS ((void *) 0xB8000)
@@ -18,12 +19,12 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         panic("multiboot_magic: Invalid magic "PRIX32"\n", magic);
     }
 
-    struct multiboot_info *info = (struct multiboot_info *) kernel_page_offset(info_ptr);
+    struct multiboot_info *info = (struct multiboot_info *) phys_to_virt(info_ptr);
     printf("multiboot_info = "PRIXPTR", flags = "PRIx32"\n", info, info->flags);
 
     // Check for base memory information.
     if (MULTIBOOT_CHECK_FLAG(info->flags, MULTIBOOT_INFO_MEMORY)) {
-        malloc_memory_start = kernel_page_offset((void *) 0x100000 + KERNEL_OFFSET);
+        malloc_memory_start = (void *) 0x100000 + KERNEL_OFFSET;
         // 1 MiB + (info->mem_upper * 1 KiB)
         malloc_memory_end = malloc_memory_start + (info->mem_upper * 0x400) - KERNEL_OFFSET;
         printf("upper_memory_end = "PRIXPTR"\n", malloc_memory_end);
@@ -38,7 +39,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
 
     // Check for command line.
     if (MULTIBOOT_CHECK_FLAG(info->flags, MULTIBOOT_INFO_CMDLINE)) {
-        char *cmdline = (char *) kernel_page_offset((void *) info->cmdline);
+        char *cmdline = (char *) phys_to_virt((void *) info->cmdline);
         printf("cmdline size %d = %s\n", strlen(cmdline), cmdline);
     }
 
@@ -48,11 +49,11 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         int i;
 
         printf("mods_count = "PRIu32", mods_addr = "PRIXUPTR"\n", info->mods_count, info->mods_addr);
-        for (i = 0, mod = (struct multiboot_mod_list *) kernel_page_offset((void *) info->mods_addr);
+        for (i = 0, mod = (struct multiboot_mod_list *) phys_to_virt((void *) info->mods_addr);
              i < info->mods_count;
              i++, mod++) {
             printf("  mod_start = "PRIXUPTR", mod_end = "PRIXUPTR", cmdline = %s\n",
-                   mod->mod_start, mod->mod_end, (char *) kernel_page_offset((void *) mod->cmdline));
+                   mod->mod_start, mod->mod_end, (char *) phys_to_virt((void *) mod->cmdline));
         }
     }
 
@@ -69,8 +70,8 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
 
         struct multiboot_mmap_entry *mmap;
         struct multiboot_mmap_entry *largest_available_entry = NULL;
-        for (mmap = (struct multiboot_mmap_entry *) kernel_page_offset((void *) info->mmap_addr);
-             (uintptr_t) mmap < (uintptr_t) kernel_page_offset((void *) info->mmap_addr + info->mmap_length);
+        for (mmap = (struct multiboot_mmap_entry *) phys_to_virt((void *) info->mmap_addr);
+             (uintptr_t) mmap < (uintptr_t) phys_to_virt((void *) info->mmap_addr + info->mmap_length);
              mmap = (struct multiboot_mmap_entry *)
                      ((uintptr_t) mmap + mmap->size + sizeof(mmap->size))) {
             if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE &&
@@ -83,7 +84,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         }
 
         if (largest_available_entry != NULL) {
-            malloc_memory_start = kernel_page_offset((void *) (uintptr_t) largest_available_entry->addr + KERNEL_OFFSET);
+            malloc_memory_start = (void *) (uintptr_t) largest_available_entry->addr + KERNEL_OFFSET;
             malloc_memory_end = malloc_memory_start + largest_available_entry->len - KERNEL_OFFSET;
             printf("malloc_memory_start = "PRIXPTR", end = "PRIXPTR"\n", malloc_memory_start, malloc_memory_end);
         }
@@ -131,7 +132,7 @@ void multiboot_init(uint32_t magic, void *info_ptr) {
         }
     } else {
         // Assume text console & hardcoded FB address for now
-        vga_init(kernel_page_offset(BASE_VIDEO_ADDRESS), 2, 0);
+        vga_init(phys_to_virt(BASE_VIDEO_ADDRESS), 2, 0);
         console_set_vga_enabled(true); // FIXME
     }
 }

@@ -1,8 +1,8 @@
 #include "tests.h"
+#include "../kmalloc.h"
 
 #include <string.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <vector.h>
 
 #define ASSERT_EQ(expected, actual) if ((expected) != (actual)) { \
@@ -265,7 +265,7 @@ bool test_vc_vector_modifiers() {
 }
 
 void test_vc_vector_strfreefunc(void *data) {
-    free(*(char **) data);
+    kfree(*(char **) data);
 }
 
 bool test_vc_vector_with_strfreefunc() {
