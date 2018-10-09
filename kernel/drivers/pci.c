@@ -80,7 +80,8 @@ bool pci_check_function(uint32_t id) {
 
     // PCI-to-PCI bridge
     if (class == 0x0604) {
-        pci_check_bus(pci_config_read_byte(id, PCI_HEADER_SEC_BUS));
+        // FIXME breaks VMWare
+        // pci_check_bus(pci_config_read_byte(id, PCI_HEADER_SEC_BUS));
     }
     return true;
 }

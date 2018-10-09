@@ -23,10 +23,11 @@ unsigned int rgb_console_rows = 0;
 unsigned int rgb_console_cols = 0;
 int rgb_console_offset = 0;
 
-typedef struct rgb_console_buffer_entry {
+typedef struct _packed rgb_console_buffer_entry {
+    vga_rgb_color_t fg;
+    _unused uint8_t __padding;
+    vga_rgb_color_t bg;
     char c;
-    vga_rgb_color_t fg_color;
-    vga_rgb_color_t bg_color;
 } rgb_console_buffer_entry_t;
 
 rgb_console_buffer_entry_t *rgb_console_buffer = NULL;
@@ -44,17 +45,20 @@ void vga_init(void *fb_addr, uint8_t type, framebuffer_info_t *fb_info) {
 
 int vga_load_font(const char *filename) {
     int prev_width = 0, prev_height = 0;
-    if (rgb_console_font_glyphs != NULL) {
+    void *old_glyphs = rgb_console_font_glyphs;
+    if (old_glyphs != NULL) {
         prev_width = rgb_console_font.width;
         prev_height = rgb_console_font.height;
-        free(rgb_console_font_glyphs);
     }
 
     rgb_console_font_glyphs = psf_read_font(filename, &rgb_console_font);
     if (rgb_console_font_glyphs == NULL) {
+        rgb_console_font_glyphs = old_glyphs;
         fprintf(stderr, "Failed to read font %s (err: %d)\n", filename, errno);
         return -1;
     }
+    free(old_glyphs);
+
     rgb_console_cols = rgb_fb_info.width / rgb_console_font.width;
     rgb_console_rows = rgb_fb_info.height / rgb_console_font.height;
 
@@ -75,6 +79,7 @@ int vga_load_font(const char *filename) {
             memcpy(new_buffer, (void *) rgb_console_buffer + diff, buffer_size);
             // FIXME refactor to avoid this kludgy division
             rgb_console_offset -= diff / sizeof(rgb_console_buffer_entry_t);
+            if (rgb_console_offset < 0) rgb_console_offset = 0;
         } else {
             memcpy(new_buffer, rgb_console_buffer, prev_size);
             memset((void *) new_buffer + prev_size, 0, buffer_size - prev_size);
@@ -122,6 +127,12 @@ void vga_display_image_bgra(int x, int y, bmp_info_header_t *header, uint8_t *im
     }
 }
 
+static inline uint32_t vga_rgb_color(vga_rgb_color_t *color) {
+    return ((uint32_t) color->red << rgb_fb_info.red_field_position)
+           | ((uint32_t) color->green << rgb_fb_info.green_field_position)
+           | ((uint32_t) color->blue << rgb_fb_info.blue_field_position);
+}
+
 static void vga_print_glyph(int offset, char c, vga_rgb_color_t *fg_color, vga_rgb_color_t *bg_color) {
     if (rgb_fb_addr == NULL || rgb_fb_info.bpp != 32) return;
 
@@ -129,12 +140,8 @@ static void vga_print_glyph(int offset, char c, vga_rgb_color_t *fg_color, vga_r
     int x = (offset % rgb_console_cols) * rgb_console_font.width;
     int y = row * rgb_console_font.height;
 
-    uint32_t fg_val = ((uint32_t) fg_color->red << rgb_fb_info.red_field_position)
-                      | ((uint32_t) fg_color->green << rgb_fb_info.green_field_position)
-                      | ((uint32_t) fg_color->blue << rgb_fb_info.blue_field_position);
-    uint32_t bg_val = ((uint32_t) bg_color->red << rgb_fb_info.red_field_position)
-                      | ((uint32_t) bg_color->green << rgb_fb_info.green_field_position)
-                      | ((uint32_t) bg_color->blue << rgb_fb_info.blue_field_position);
+    uint32_t fg_val = vga_rgb_color(fg_color);
+    uint32_t bg_val = vga_rgb_color(bg_color);
 
     int xmax = MIN(x + rgb_console_font.width, rgb_fb_info.width);
     int ymax = MIN(y + rgb_console_font.height, rgb_fb_info.height);
@@ -172,7 +179,7 @@ int vga_print_char(char c, int offset, char attr) {
                 bg_color = (vga_rgb_color_t) {0, 0, 0};
             }
 
-            rgb_console_buffer[offset] = (rgb_console_buffer_entry_t) {c, fg_color, bg_color};
+            rgb_console_buffer[offset] = (rgb_console_buffer_entry_t) {.c = c, .fg = fg_color, .bg = bg_color};
             if (!c) c = ' ';
             vga_print_glyph(offset++, c, &fg_color, &bg_color);
         }
@@ -206,7 +213,7 @@ int vga_get_cursor_offset() {
     int offset = port_byte_in(REG_SCREEN_DATA) << 8; /* High byte: << 8 */
     port_byte_out(REG_SCREEN_CTRL, 15);
     offset += port_byte_in(REG_SCREEN_DATA);
-    return offset; /* Position * size of character cell */
+    return offset;
 }
 
 void vga_set_cursor_offset(int offset) {
@@ -223,7 +230,7 @@ void vga_clear_screen() {
         vga_set_cursor_offset(vga_get_offset(0, 0));
     } else if (rgb_fb_addr != NULL) {
         vga_fill_rect(0, 0, rgb_fb_info.width, rgb_fb_info.height, &(vga_rgb_color_t) {0, 0, 0});
-        memset(rgb_console_buffer, 0, rgb_console_rows * rgb_console_cols);
+        memset(rgb_console_buffer, 0, rgb_console_rows * rgb_console_cols * sizeof(rgb_console_buffer_entry_t));
         rgb_console_offset = 0;
     }
 }
@@ -233,7 +240,7 @@ static void vga_console_repaint() {
         rgb_console_buffer_entry_t *entry = &rgb_console_buffer[i];
         char c = entry->c;
         if (!c) c = ' '; // FIXME improve
-        vga_print_glyph(i, c, &entry->fg_color, &entry->bg_color);
+        vga_print_glyph(i, c, &entry->fg, &entry->bg);
     }
 }
 

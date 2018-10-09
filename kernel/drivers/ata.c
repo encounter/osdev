@@ -271,12 +271,13 @@ void ide_initialize(uint32_t bar0, uint32_t bar1, uint32_t bar2, uint32_t bar3, 
             ide_devices[count].command_sets = *((uint32_t *) (ide_buf + ATA_IDENT_COMMANDSETS));
 
             // (VII) Get Size:
-            if (ide_devices[count].command_sets & (1 << 26))
+            if (ide_devices[count].command_sets & (1 << 26)) {
                 // Device uses 48-Bit Addressing:
                 ide_devices[count].size = *((uint32_t *) (ide_buf + ATA_IDENT_MAX_LBA_EXT));
-            else
+            } else {
                 // Device uses CHS or 28-bit Addressing:
                 ide_devices[count].size = *((uint32_t *) (ide_buf + ATA_IDENT_MAX_LBA));
+            }
 
             // (VIII) String indicates model of device (like Western Digital HDD and SONY DVD-RW...):
             for (k = 0; k < 40; k += 2) {

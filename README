@@ -24,6 +24,12 @@ qemu-system-i386 -cdrom os.iso
 # IDE drive:
 -drive file=hd.img,if=ide,format=raw
 
+# HAXM (macOS)
+-enable-hax
+
+# KVM (Linux)
+-enable-kvm
+
 # -----------------
 # Full example:
 make -C build && ./mkiso.sh build/kernel.bin && ./mkhd.sh build && \

@@ -9,12 +9,14 @@ if [ "$(uname)" == "Darwin" ]; then
     mkdir -p tmp/bin
     cp "$1/kernel.bin" tmp/kernel.bin
     cp "README" tmp/README
-    gfind "$1/bin" -type f -executable -exec cp {} tmp/bin \;
+    if [ -d "$1/bin" ]; then
+        gfind "$1/bin" -type f -executable -exec cp {} tmp/bin \;
+    fi
     cp -R assets "tmp/"
 
     hdiutil create -size 10m -fs exfat -srcfolder tmp hd
     qemu-img convert hd.dmg -O qcow2 hd.img
-    rm -r hd.dmg tmp
+    rm -r  tmp # hd.dmg
 else
     truncate -s 100M hd.img
     mkfs -t exfat hd.img
@@ -23,7 +25,9 @@ else
     mkdir "$MPAT/bin"
     cp "$1/kernel.bin" "$MPAT/kernel.bin"
     cp "README" "$MPAT/README"
-    find "$1/bin" -type f -executable -exec cp {} "$MPAT/bin" \;
+    if [ -d "$1/bin" ]; then
+        find "$1/bin" -type f -executable -exec cp {} "$MPAT/bin" \;
+    fi
     cp -R assets "$MPAT/"
     sync
     udisksctl unmount -b "$LDEV"
